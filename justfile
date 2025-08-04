@@ -2,6 +2,9 @@ repomix:
     rm -f repomix-output.xml
     npx repomix . --style xml --ignore lib
 
+fuzz:
+    forge test -vvvv -s
+
 coverage:
     rm -rf coverage
     mkdir -p coverage
