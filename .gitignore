@@ -16,5 +16,6 @@ docs/
 # Repomix
 repomix-*
 
-# Invariant
+# Invariants
 corpus
+coverage
