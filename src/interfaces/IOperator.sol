@@ -24,9 +24,9 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IRoles } from "./IRoles.sol";
-import { IBlacklister } from "./IBlacklister.sol";
-import { ImTokenOperationTypes } from "./ImToken.sol";
+import {IRoles} from "./IRoles.sol";
+import {IBlacklister} from "./IBlacklister.sol";
+import {ImTokenOperationTypes} from "./ImToken.sol";
 
 interface IOperatorData {
     struct Market {
@@ -57,13 +57,7 @@ interface IOperatorDefender {
      * @param dst The account which receives the tokens
      * @param transferTokens The number of mTokens to transfer
      */
-    function beforeMTokenTransfer(
-        address mToken,
-        address src,
-        address dst,
-        uint256 transferTokens
-    )
-        external;
+    function beforeMTokenTransfer(address mToken, address src, address dst, uint256 transferTokens) external;
 
     /**
      * @notice Checks if the account should be allowed to mint tokens in the given market
@@ -84,12 +78,7 @@ interface IOperatorDefender {
      * @param redeemer The account which would redeem the tokens
      * @param redeemTokens The number of mTokens to exchange for the underlying asset in the market
      */
-    function beforeMTokenRedeem(
-        address mToken,
-        address redeemer,
-        uint256 redeemTokens
-    )
-        external;
+    function beforeMTokenRedeem(address mToken, address redeemer, uint256 redeemTokens) external;
 
     /**
      * @notice Checks if the account should be allowed to borrow the underlying asset of the given market
@@ -97,12 +86,7 @@ interface IOperatorDefender {
      * @param borrower The account which would borrow the asset
      * @param borrowAmount The amount of underlying the account would borrow
      */
-    function beforeMTokenBorrow(
-        address mToken,
-        address borrower,
-        uint256 borrowAmount
-    )
-        external;
+    function beforeMTokenBorrow(address mToken, address borrower, uint256 borrowAmount) external;
 
     /**
      * @notice Checks if the account should be allowed to repay a borrow in the given market
@@ -123,9 +107,7 @@ interface IOperatorDefender {
         address mTokenCollateral,
         address borrower,
         uint256 repayAmount
-    )
-        external
-        view;
+    ) external view;
 
     /**
      * @notice Checks if the seizing of assets should be allowed to occur
@@ -134,12 +116,7 @@ interface IOperatorDefender {
      * @param liquidator The address repaying the borrow and seizing the collateral
      * @param borrower The address of the borrower
      */
-    function beforeMTokenSeize(
-        address mTokenCollateral,
-        address mTokenBorrowed,
-        address liquidator,
-        address borrower
-    )
+    function beforeMTokenSeize(address mTokenCollateral, address mTokenBorrowed, address liquidator, address borrower)
         external;
 
     /**
@@ -187,13 +164,7 @@ interface IOperator {
      * @param mToken The mToken to check
      * @param _type the operation type
      */
-    function isPaused(
-        address mToken,
-        ImTokenOperationTypes.OperationType _type
-    )
-        external
-        view
-        returns (bool);
+    function isPaused(address mToken, ImTokenOperationTypes.OperationType _type) external view returns (bool);
 
     /**
      * @notice Roles
@@ -218,10 +189,7 @@ interface IOperator {
     /**
      * @notice Multiplier representing the discount on collateral that a liquidator receives
      */
-    function liquidationIncentiveMantissa(address market)
-        external
-        view
-        returns (uint256);
+    function liquidationIncentiveMantissa(address market) external view returns (uint256);
 
     /**
      * @notice Returns true/false
@@ -233,10 +201,7 @@ interface IOperator {
      * @param _user The address of the account to pull assets for
      * @return mTokens A dynamic list with the assets the account has entered
      */
-    function getAssetsIn(address _user)
-        external
-        view
-        returns (address[] memory mTokens);
+    function getAssetsIn(address _user) external view returns (address[] memory mTokens);
 
     /**
      * @notice A list of all markets
@@ -264,23 +229,14 @@ interface IOperator {
      * @param mToken The mToken to check
      * @return True if the account is in the asset, otherwise false.
      */
-    function checkMembership(
-        address account,
-        address mToken
-    )
-        external
-        view
-        returns (bool);
+    function checkMembership(address account, address mToken) external view returns (bool);
 
     /**
      * @notice Determine the current account liquidity wrt collateral requirements
      * @return  account liquidity in excess of collateral requirements,
      *          account shortfall below collateral requirements)
      */
-    function getAccountLiquidity(address account)
-        external
-        view
-        returns (uint256, uint256);
+    function getAccountLiquidity(address account) external view returns (uint256, uint256);
 
     /**
      * @notice Determine what the account liquidity would be if the given amounts were redeemed/borrowed
@@ -296,10 +252,7 @@ interface IOperator {
         address mTokenModify,
         uint256 redeemTokens,
         uint256 borrowAmount
-    )
-        external
-        view
-        returns (uint256, uint256);
+    ) external view returns (uint256, uint256);
 
     /**
      * @notice Returns USD value for all markets
@@ -314,11 +267,7 @@ interface IOperator {
      * @param actualRepayAmount The amount of mTokenBorrowed underlying to convert into mTokenCollateral tokens
      * @return number of mTokenCollateral tokens to be seized in a liquidation
      */
-    function liquidateCalculateSeizeTokens(
-        address mTokenBorrowed,
-        address mTokenCollateral,
-        uint256 actualRepayAmount
-    )
+    function liquidateCalculateSeizeTokens(address mTokenBorrowed, address mTokenCollateral, uint256 actualRepayAmount)
         external
         view
         returns (uint256);
@@ -337,12 +286,7 @@ interface IOperator {
      * @param _type The pause operation type
      * @param state The pause operation status
      */
-    function setPaused(
-        address mToken,
-        ImTokenOperationTypes.OperationType _type,
-        bool state
-    )
-        external;
+    function setPaused(address mToken, ImTokenOperationTypes.OperationType _type, bool state) external;
 
     /**
      * @notice Add assets to be included in account liquidity calculation
@@ -384,11 +328,5 @@ interface IOperator {
      * @param borrowers Whether or not to claim MALDA earned by borrowing
      * @param suppliers Whether or not to claim MALDA earned by supplying
      */
-    function claimMalda(
-        address[] memory holders,
-        address[] memory mTokens,
-        bool borrowers,
-        bool suppliers
-    )
-        external;
+    function claimMalda(address[] memory holders, address[] memory mTokens, bool borrowers, bool suppliers) external;
 }

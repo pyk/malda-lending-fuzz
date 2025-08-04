@@ -23,9 +23,9 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import { IRoles } from "./interfaces/IRoles.sol";
+import {IRoles} from "./interfaces/IRoles.sol";
 
 contract Roles is Ownable, IRoles {
     // ----------- STORAGE ------------
@@ -38,37 +38,24 @@ contract Roles is Ownable, IRoles {
     bytes32 public constant GUARDIAN_PAUSE = keccak256("GUARDIAN_PAUSE");
     bytes32 public constant CHAINS_MANAGER = keccak256("CHAINS_MANAGER");
     bytes32 public constant PROOF_FORWARDER = keccak256("PROOF_FORWARDER");
-    bytes32 public constant PROOF_BATCH_FORWARDER =
-        keccak256("PROOF_BATCH_FORWARDER");
+    bytes32 public constant PROOF_BATCH_FORWARDER = keccak256("PROOF_BATCH_FORWARDER");
     bytes32 public constant SEQUENCER = keccak256("SEQUENCER");
     bytes32 public constant GUARDIAN_BRIDGE = keccak256("GUARDIAN_BRIDGE");
     bytes32 public constant GUARDIAN_ORACLE = keccak256("GUARDIAN_ORACLE");
     bytes32 public constant GUARDIAN_RESERVE = keccak256("GUARDIAN_RESERVE");
-    bytes32 public constant GUARDIAN_BORROW_CAP =
-        keccak256("GUARDIAN_BORROW_CAP");
-    bytes32 public constant GUARDIAN_SUPPLY_CAP =
-        keccak256("GUARDIAN_SUPPLY_CAP");
+    bytes32 public constant GUARDIAN_BORROW_CAP = keccak256("GUARDIAN_BORROW_CAP");
+    bytes32 public constant GUARDIAN_SUPPLY_CAP = keccak256("GUARDIAN_SUPPLY_CAP");
     bytes32 public constant GUARDIAN_BLACKLIST = keccak256("GUARDIAN_BLACKLIST");
 
     /**
      * @notice emitted when role is set
      */
-    event Allowed(
-        address indexed _contract, bytes32 indexed _role, bool _allowed
-    );
+    event Allowed(address indexed _contract, bytes32 indexed _role, bool _allowed);
 
-    constructor(address _owner) Ownable(_owner) { }
+    constructor(address _owner) Ownable(_owner) {}
 
     // ----------- VIEW ------------
-    function isAllowedFor(
-        address _contract,
-        bytes32 _role
-    )
-        external
-        view
-        override
-        returns (bool)
-    {
+    function isAllowedFor(address _contract, bytes32 _role) external view override returns (bool) {
         return _roles[_contract][_role];
     }
 
@@ -79,18 +66,8 @@ contract Roles is Ownable, IRoles {
      * @param _role the bytes32 role.
      * @param _allowed the new status.
      */
-    function allowFor(
-        address _contract,
-        bytes32 _role,
-        bool _allowed
-    )
-        external
-        onlyOwner
-    {
-        require(
-            _contract != address(0) && _role != bytes32(0),
-            Roles_InputNotValid()
-        );
+    function allowFor(address _contract, bytes32 _role, bool _allowed) external onlyOwner {
+        require(_contract != address(0) && _role != bytes32(0), Roles_InputNotValid());
         _roles[_contract][_role] = _allowed;
         emit Allowed(_contract, _role, _allowed);
     }

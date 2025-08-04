@@ -19,7 +19,7 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IRoles } from "src/interfaces/IRoles.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
 
 abstract contract BaseBridge {
     // ----------- STORAGE ------------

@@ -23,13 +23,12 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { IBridge } from "src/interfaces/IBridge.sol";
-import { IOperator } from "src/interfaces/IOperator.sol";
-import { ImTokenMinimal, ImToken } from "src/interfaces/ImToken.sol";
-import { IRebalancer, IRebalanceMarket } from "src/interfaces/IRebalancer.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {IBridge} from "src/interfaces/IBridge.sol";
+import {ImTokenMinimal} from "src/interfaces/ImToken.sol";
+import {IRebalancer, IRebalanceMarket} from "src/interfaces/IRebalancer.sol";
 
-import { SafeApprove } from "src/libraries/SafeApprove.sol";
+import {SafeApprove} from "src/libraries/SafeApprove.sol";
 
 contract Rebalancer is IRebalancer {
     // ----------- STORAGE ------------
@@ -49,8 +48,7 @@ contract Rebalancer is IRebalancer {
 
     mapping(uint32 => mapping(address => uint256)) public maxTransferSizes;
     mapping(uint32 => mapping(address => uint256)) public minTransferSizes;
-    mapping(uint32 => mapping(address => TransferInfo)) public
-        currentTransferSize;
+    mapping(uint32 => mapping(address => TransferInfo)) public currentTransferSize;
     uint256 public transferTimeWindow;
 
     constructor(address _roles, address _saveAddress) {
@@ -75,12 +73,7 @@ contract Rebalancer is IRebalancer {
         emit AllowedListUpdated(list, status);
     }
 
-    function setWhitelistedBridgeStatus(
-        address _bridge,
-        bool _status
-    )
-        external
-    {
+    function setWhitelistedBridgeStatus(address _bridge, bool _status) external {
         if (!roles.isAllowedFor(msg.sender, roles.GUARDIAN_BRIDGE())) {
             revert Rebalancer_NotAuthorized();
         }
@@ -104,18 +97,12 @@ contract Rebalancer is IRebalancer {
 
         uint256 amount = address(this).balance;
         // no need to check return value
-        (bool success,) = saveAddress.call{ value: amount }("");
+        (bool success,) = saveAddress.call{value: amount}("");
         require(success, Rebalancer_RequestNotValid());
         emit EthSaved(amount);
     }
 
-    function setMinTransferSize(
-        uint32 _dstChainId,
-        address _token,
-        uint256 _limit
-    )
-        external
-    {
+    function setMinTransferSize(uint32 _dstChainId, address _token, uint256 _limit) external {
         if (!roles.isAllowedFor(msg.sender, roles.GUARDIAN_BRIDGE())) {
             revert Rebalancer_NotAuthorized();
         }
@@ -123,13 +110,7 @@ contract Rebalancer is IRebalancer {
         emit MinTransferSizeUpdated(_dstChainId, _token, _limit);
     }
 
-    function setMaxTransferSize(
-        uint32 _dstChainId,
-        address _token,
-        uint256 _limit
-    )
-        external
-    {
+    function setMaxTransferSize(uint32 _dstChainId, address _token, uint256 _limit) external {
         if (!roles.isAllowedFor(msg.sender, roles.GUARDIAN_BRIDGE())) {
             revert Rebalancer_NotAuthorized();
         }
@@ -148,11 +129,7 @@ contract Rebalancer is IRebalancer {
     /**
      * @inheritdoc IRebalancer
      */
-    function isDestinationWhitelisted(uint32 dstId)
-        external
-        view
-        returns (bool)
-    {
+    function isDestinationWhitelisted(uint32 dstId) external view returns (bool) {
         return whitelistedDestinations[dstId];
     }
 
@@ -160,51 +137,31 @@ contract Rebalancer is IRebalancer {
     /**
      * @inheritdoc IRebalancer
      */
-    function sendMsg(
-        address _bridge,
-        address _market,
-        uint256 _amount,
-        Msg calldata _msg
-    )
-        external
-        payable
-    {
+    function sendMsg(address _bridge, address _market, uint256 _amount, Msg calldata _msg) external payable {
         // checks
         if (!roles.isAllowedFor(msg.sender, roles.REBALANCER_EOA())) {
             revert Rebalancer_NotAuthorized();
         }
         require(whitelistedBridges[_bridge], Rebalancer_BridgeNotWhitelisted());
-        require(
-            whitelistedDestinations[_msg.dstChainId],
-            Rebalancer_DestinationNotWhitelisted()
-        );
+        require(whitelistedDestinations[_msg.dstChainId], Rebalancer_DestinationNotWhitelisted());
         address _underlying = ImTokenMinimal(_market).underlying();
         require(_underlying == _msg.token, Rebalancer_RequestNotValid());
 
         // min transfer size check
-        require(
-            _amount > minTransferSizes[_msg.dstChainId][_msg.token],
-            Rebalancer_TransferSizeMinNotMet()
-        );
+        require(_amount > minTransferSizes[_msg.dstChainId][_msg.token], Rebalancer_TransferSizeMinNotMet());
 
         // max transfer size checks
-        TransferInfo memory transferInfo =
-            currentTransferSize[_msg.dstChainId][_msg.token];
-        uint256 transferSizeDeadline =
-            transferInfo.timestamp + transferTimeWindow;
+        TransferInfo memory transferInfo = currentTransferSize[_msg.dstChainId][_msg.token];
+        uint256 transferSizeDeadline = transferInfo.timestamp + transferTimeWindow;
         if (transferSizeDeadline < block.timestamp) {
-            currentTransferSize[_msg.dstChainId][_msg.token] =
-                TransferInfo(_amount, block.timestamp);
+            currentTransferSize[_msg.dstChainId][_msg.token] = TransferInfo(_amount, block.timestamp);
         } else {
             currentTransferSize[_msg.dstChainId][_msg.token].size += _amount;
         }
 
         uint256 _maxTransferSize = maxTransferSizes[_msg.dstChainId][_msg.token];
         if (_maxTransferSize > 0) {
-            require(
-                transferInfo.size + _amount < _maxTransferSize,
-                Rebalancer_TransferSizeExcedeed()
-            );
+            require(transferInfo.size + _amount < _maxTransferSize, Rebalancer_TransferSizeExcedeed());
         }
 
         // retrieve amounts (make sure to check min and max for that bridge)
@@ -219,17 +176,10 @@ contract Rebalancer is IRebalancer {
 
         // approve and trigger send
         SafeApprove.safeApprove(_msg.token, _bridge, _amount);
-        IBridge(_bridge).sendMsg{ value: msg.value }(
-            _amount,
-            _market,
-            _msg.dstChainId,
-            _msg.token,
-            _msg.message,
-            _msg.bridgeData
+        IBridge(_bridge).sendMsg{value: msg.value}(
+            _amount, _market, _msg.dstChainId, _msg.token, _msg.message, _msg.bridgeData
         );
 
-        emit MsgSent(
-            _bridge, _msg.dstChainId, _msg.token, _msg.message, _msg.bridgeData
-        );
+        emit MsgSent(_bridge, _msg.dstChainId, _msg.token, _msg.message, _msg.bridgeData);
     }
 }

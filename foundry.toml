@@ -5,6 +5,7 @@ libs = ["lib"]
 
 [lint]
 exclude_lints = [
+  "mixed-case-variable",
   "mixed-case-function",
   "screaming-snake-case-const",
   "screaming-snake-case-immutable",

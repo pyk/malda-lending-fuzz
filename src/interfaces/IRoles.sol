@@ -101,8 +101,5 @@ interface IRoles {
      * @param _contract the contract address
      * @param _role the bytes32 role
      */
-    function isAllowedFor(address _contract, bytes32 _role)
-        external
-        view
-        returns (bool);
+    function isAllowedFor(address _contract, bytes32 _role) external view returns (bool);
 }

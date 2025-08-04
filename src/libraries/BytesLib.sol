@@ -9,14 +9,7 @@
 pragma solidity =0.8.28;
 
 library BytesLib {
-    function concat(
-        bytes memory _preBytes,
-        bytes memory _postBytes
-    )
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function concat(bytes memory _preBytes, bytes memory _postBytes) internal pure returns (bytes memory) {
         bytes memory tempBytes;
 
         assembly {
@@ -86,12 +79,7 @@ library BytesLib {
         return tempBytes;
     }
 
-    function concatStorage(
-        bytes storage _preBytes,
-        bytes memory _postBytes
-    )
-        internal
-    {
+    function concatStorage(bytes storage _preBytes, bytes memory _postBytes) internal {
         assembly {
             // Read the first 32 bytes of _preBytes storage, which is the length
             // of the array. (We don't need to use the offset into the slot
@@ -104,8 +92,7 @@ library BytesLib {
             // If the slot is even, bitwise and the slot with 255 and divide by
             // two to get the length. If the slot is odd, bitwise and the slot
             // with -1 and divide by two.
-            let slength :=
-                div(and(fslot, sub(mul(0x100, iszero(and(fslot, 1))), 1)), 2)
+            let slength := div(and(fslot, sub(mul(0x100, iszero(and(fslot, 1))), 1)), 2)
             let mlength := mload(_postBytes)
             let newlength := add(slength, mlength)
             // slength can contain both the length and contents of the array
@@ -170,10 +157,7 @@ library BytesLib {
                 sstore(
                     sc,
                     add(
-                        and(
-                            fslot,
-                            0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00
-                        ),
+                        and(fslot, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00),
                         and(mload(mc), mask)
                     )
                 )
@@ -225,15 +209,7 @@ library BytesLib {
         }
     }
 
-    function slice(
-        bytes memory _bytes,
-        uint256 _start,
-        uint256 _length
-    )
-        internal
-        pure
-        returns (bytes memory)
-    {
+    function slice(bytes memory _bytes, uint256 _start, uint256 _length) internal pure returns (bytes memory) {
         require(_length + 31 >= _length, "slice_overflow");
         require(_bytes.length >= _start + _length, "slice_outOfBounds");
 
@@ -260,20 +236,13 @@ library BytesLib {
                 // because when slicing multiples of 32 bytes (lengthmod == 0)
                 // the following copy loop was copying the origin's length
                 // and then ending prematurely not copying everything it should.
-                let mc :=
-                    add(add(tempBytes, lengthmod), mul(0x20, iszero(lengthmod)))
+                let mc := add(add(tempBytes, lengthmod), mul(0x20, iszero(lengthmod)))
                 let end := add(mc, _length)
 
                 for {
                     // The multiplication in the next line has the same exact purpose
                     // as the one above.
-                    let cc :=
-                        add(
-                            add(
-                                add(_bytes, lengthmod), mul(0x20, iszero(lengthmod))
-                            ),
-                            _start
-                        )
+                    let cc := add(add(add(_bytes, lengthmod), mul(0x20, iszero(lengthmod))), _start)
                 } lt(mc, end) {
                     mc := add(mc, 0x20)
                     cc := add(cc, 0x20)
@@ -299,36 +268,18 @@ library BytesLib {
         return tempBytes;
     }
 
-    function toAddress(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (address)
-    {
+    function toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
         require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
         address tempAddress;
 
         assembly {
-            tempAddress :=
-                div(
-                    mload(add(add(_bytes, 0x20), _start)),
-                    0x1000000000000000000000000
-                )
+            tempAddress := div(mload(add(add(_bytes, 0x20), _start)), 0x1000000000000000000000000)
         }
 
         return tempAddress;
     }
 
-    function toUint8(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint8)
-    {
+    function toUint8(bytes memory _bytes, uint256 _start) internal pure returns (uint8) {
         require(_bytes.length >= _start + 1, "toUint8_outOfBounds");
         uint8 tempUint;
 
@@ -339,14 +290,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toUint16(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint16)
-    {
+    function toUint16(bytes memory _bytes, uint256 _start) internal pure returns (uint16) {
         require(_bytes.length >= _start + 2, "toUint16_outOfBounds");
         uint16 tempUint;
 
@@ -357,14 +301,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toUint32(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint32)
-    {
+    function toUint32(bytes memory _bytes, uint256 _start) internal pure returns (uint32) {
         require(_bytes.length >= _start + 4, "toUint32_outOfBounds");
         uint32 tempUint;
 
@@ -375,14 +312,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toUint64(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint64)
-    {
+    function toUint64(bytes memory _bytes, uint256 _start) internal pure returns (uint64) {
         require(_bytes.length >= _start + 8, "toUint64_outOfBounds");
         uint64 tempUint;
 
@@ -393,14 +323,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toUint96(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint96)
-    {
+    function toUint96(bytes memory _bytes, uint256 _start) internal pure returns (uint96) {
         require(_bytes.length >= _start + 12, "toUint96_outOfBounds");
         uint96 tempUint;
 
@@ -411,14 +334,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toUint128(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint128)
-    {
+    function toUint128(bytes memory _bytes, uint256 _start) internal pure returns (uint128) {
         require(_bytes.length >= _start + 16, "toUint128_outOfBounds");
         uint128 tempUint;
 
@@ -429,14 +345,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toUint256(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (uint256)
-    {
+    function toUint256(bytes memory _bytes, uint256 _start) internal pure returns (uint256) {
         require(_bytes.length >= _start + 32, "toUint256_outOfBounds");
         uint256 tempUint;
 
@@ -447,14 +356,7 @@ library BytesLib {
         return tempUint;
     }
 
-    function toBytes32(
-        bytes memory _bytes,
-        uint256 _start
-    )
-        internal
-        pure
-        returns (bytes32)
-    {
+    function toBytes32(bytes memory _bytes, uint256 _start) internal pure returns (bytes32) {
         require(_bytes.length >= _start + 32, "toBytes32_outOfBounds");
         bytes32 tempBytes32;
 
@@ -465,14 +367,7 @@ library BytesLib {
         return tempBytes32;
     }
 
-    function equal(
-        bytes memory _preBytes,
-        bytes memory _postBytes
-    )
-        internal
-        pure
-        returns (bool)
-    {
+    function equal(bytes memory _preBytes, bytes memory _postBytes) internal pure returns (bool) {
         bool success = true;
 
         assembly {
@@ -514,14 +409,7 @@ library BytesLib {
         return success;
     }
 
-    function equal_nonAligned(
-        bytes memory _preBytes,
-        bytes memory _postBytes
-    )
-        internal
-        pure
-        returns (bool)
-    {
+    function equal_nonAligned(bytes memory _preBytes, bytes memory _postBytes) internal pure returns (bool) {
         bool success = true;
 
         assembly {
@@ -584,22 +472,14 @@ library BytesLib {
         return success;
     }
 
-    function equalStorage(
-        bytes storage _preBytes,
-        bytes memory _postBytes
-    )
-        internal
-        view
-        returns (bool)
-    {
+    function equalStorage(bytes storage _preBytes, bytes memory _postBytes) internal view returns (bool) {
         bool success = true;
 
         assembly {
             // we know _preBytes_offset is 0
             let fslot := sload(_preBytes.slot)
             // Decode the length of the stored array like in concatStorage().
-            let slength :=
-                div(and(fslot, sub(mul(0x100, iszero(and(fslot, 1))), 1)), 2)
+            let slength := div(and(fslot, sub(mul(0x100, iszero(and(fslot, 1))), 1)), 2)
             let mlength := mload(_postBytes)
 
             // if lengths don't match the arrays are not equal
@@ -635,7 +515,7 @@ library BytesLib {
 
                         // the next line is the loop condition:
                         // while(uint256(mc < end) + cb == 2)
-                        for { } eq(add(lt(mc, end), cb), 2) {
+                        for {} eq(add(lt(mc, end), cb), 2) {
                             sc := add(sc, 1)
                             mc := add(mc, 0x20)
                         } {

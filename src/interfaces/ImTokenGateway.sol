@@ -23,18 +23,16 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IRoles } from "./IRoles.sol";
-import { IBlacklister } from "./IBlacklister.sol";
-import { ImTokenOperationTypes } from "./ImToken.sol";
+import {IRoles} from "./IRoles.sol";
+import {IBlacklister} from "./IBlacklister.sol";
+import {ImTokenOperationTypes} from "./ImToken.sol";
 
 interface ImTokenGateway {
     // ----------- EVENTS -----------
     /**
      * @notice Emitted when a user updates allowed callers
      */
-    event AllowedCallerUpdated(
-        address indexed sender, address indexed caller, bool status
-    );
+    event AllowedCallerUpdated(address indexed sender, address indexed caller, bool status);
 
     /**
      * @notice Emitted when a supply operation is initiated
@@ -82,12 +80,8 @@ interface ImTokenGateway {
      * @notice Emitted when the gas fee is updated
      */
     event mTokenGateway_GasFeeUpdated(uint256 amount);
-    event mTokenGateway_PausedState(
-        ImTokenOperationTypes.OperationType indexed _type, bool _status
-    );
-    event ZkVerifierUpdated(
-        address indexed oldVerifier, address indexed newVerifier
-    );
+    event mTokenGateway_PausedState(ImTokenOperationTypes.OperationType indexed _type, bool _status);
+    event ZkVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
     event mTokenGateway_UserWhitelisted(address indexed user, bool status);
     event mTokenGateway_WhitelistEnabled();
     event mTokenGateway_WhitelistDisabled();
@@ -187,10 +181,7 @@ interface ImTokenGateway {
      * @notice returns pause state for operation
      * @param _type the operation type
      */
-    function isPaused(ImTokenOperationTypes.OperationType _type)
-        external
-        view
-        returns (bool);
+    function isPaused(ImTokenOperationTypes.OperationType _type) external view returns (bool);
 
     /**
      * @notice Returns accumulated amount in per user
@@ -205,10 +196,7 @@ interface ImTokenGateway {
     /**
      * @notice Returns the proof data journal
      */
-    function getProofData(address user, uint32 dstId)
-        external
-        view
-        returns (uint256, uint256);
+    function getProofData(address user, uint32 dstId) external view returns (uint256, uint256);
 
     // ----------- PUBLIC -----------
     /**
@@ -222,8 +210,7 @@ interface ImTokenGateway {
      * @param _type The pause operation type
      * @param state The pause operation status
      */
-    function setPaused(ImTokenOperationTypes.OperationType _type, bool state)
-        external;
+    function setPaused(ImTokenOperationTypes.OperationType _type, bool state) external;
 
     /**
      * @notice Set caller status for `msg.sender`
@@ -238,11 +225,7 @@ interface ImTokenGateway {
      * @param receiver The receiver address
      * @param lineaSelector The method selector to be called on Linea by our relayer. If empty, user has to submit it
      */
-    function supplyOnHost(
-        uint256 amount,
-        address receiver,
-        bytes4 lineaSelector
-    ) external payable;
+    function supplyOnHost(uint256 amount, address receiver, bytes4 lineaSelector) external payable;
 
     /**
      * @notice Extract tokens
@@ -251,10 +234,6 @@ interface ImTokenGateway {
      * @param amounts The amounts to withdraw for each journal
      * @param receiver The receiver address
      */
-    function outHere(
-        bytes calldata journalData,
-        bytes calldata seal,
-        uint256[] memory amounts,
-        address receiver
-    ) external;
+    function outHere(bytes calldata journalData, bytes calldata seal, uint256[] memory amounts, address receiver)
+        external;
 }

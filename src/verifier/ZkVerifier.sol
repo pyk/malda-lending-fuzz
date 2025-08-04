@@ -24,19 +24,13 @@ pragma solidity =0.8.28;
 */
 
 // interfaces
-import { IRiscZeroVerifier } from "risc0/IRiscZeroVerifier.sol";
+import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
 // contracts
-import { Steel } from "risc0/steel/Steel.sol";
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IZkVerifier {
-    function verifyInput(
-        bytes calldata journalEntry,
-        bytes calldata seal
-    )
-        external
-        view;
+    function verifyInput(bytes calldata journalEntry, bytes calldata seal) external view;
 }
 
 contract ZkVerifier is Ownable, IZkVerifier {
@@ -52,13 +46,7 @@ contract ZkVerifier is Ownable, IZkVerifier {
     event ImageSet(bytes32 _imageId);
     event VerifierSet(address indexed oldVerifier, address indexed newVerifier);
 
-    constructor(
-        address _owner,
-        bytes32 _imageId,
-        address _verifier
-    )
-        Ownable(_owner)
-    {
+    constructor(address _owner, bytes32 _imageId, address _verifier) Ownable(_owner) {
         require(_verifier != address(0), ZkVerifier_InputNotValid());
         require(_imageId != bytes32(0), ZkVerifier_InputNotValid());
         verifier = IRiscZeroVerifier(_verifier);
@@ -94,13 +82,7 @@ contract ZkVerifier is Ownable, IZkVerifier {
      * @param journalEntry the risc0 journal entry
      * @param seal the risc0 seal
      */
-    function verifyInput(
-        bytes calldata journalEntry,
-        bytes calldata seal
-    )
-        external
-        view
-    {
+    function verifyInput(bytes calldata journalEntry, bytes calldata seal) external view {
         // generic checks
         _checkAddresses();
 
@@ -113,13 +95,7 @@ contract ZkVerifier is Ownable, IZkVerifier {
         require(address(verifier) != address(0), ZkVerifier_VerifierNotSet());
     }
 
-    function __verify(
-        bytes calldata journalEntry,
-        bytes calldata seal
-    )
-        private
-        view
-    {
+    function __verify(bytes calldata journalEntry, bytes calldata seal) private view {
         verifier.verify(seal, imageId, sha256(journalEntry));
     }
 }

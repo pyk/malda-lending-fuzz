@@ -24,14 +24,13 @@ pragma solidity =0.8.28;
 */
 
 // interfaces
-import { ImErc20 } from "src/interfaces/ImErc20.sol";
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { ImTokenMinimal, ImTokenDelegator } from "src/interfaces/ImToken.sol";
+import {ImErc20} from "src/interfaces/ImErc20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ImTokenMinimal} from "src/interfaces/ImToken.sol";
 
 // contracts
-import { mToken } from "./mToken.sol";
-import { SafeERC20 } from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {mToken} from "./mToken.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @title Malda's mErc20 Contract
@@ -67,18 +66,9 @@ abstract contract mErc20 is mToken, ImErc20 {
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    )
-        internal
-    {
+    ) internal {
         // mToken initialize does the bulk of the work
-        _initializeMToken(
-            operator_,
-            interestRateModel_,
-            initialExchangeRateMantissa_,
-            name_,
-            symbol_,
-            decimals_
-        );
+        _initializeMToken(operator_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_);
 
         // Set underlying and sanity check it
         underlying = underlying_;
@@ -99,13 +89,7 @@ abstract contract mErc20 is mToken, ImErc20 {
     /**
      * @inheritdoc ImErc20
      */
-    function mint(
-        uint256 mintAmount,
-        address receiver,
-        uint256 minAmountOut
-    )
-        external
-    {
+    function mint(uint256 mintAmount, address receiver, uint256 minAmountOut) external {
         _mint(msg.sender, receiver, mintAmount, minAmountOut, true);
     }
 
@@ -140,26 +124,14 @@ abstract contract mErc20 is mToken, ImErc20 {
     /**
      * @inheritdoc ImErc20
      */
-    function repayBehalf(
-        address borrower,
-        uint256 repayAmount
-    )
-        external
-        returns (uint256)
-    {
+    function repayBehalf(address borrower, uint256 repayAmount) external returns (uint256) {
         return _repayBehalf(borrower, repayAmount, true);
     }
 
     /**
      * @inheritdoc ImErc20
      */
-    function liquidate(
-        address borrower,
-        uint256 repayAmount,
-        address mTokenCollateral
-    )
-        external
-    {
+    function liquidate(address borrower, uint256 repayAmount, address mTokenCollateral) external {
         _liquidate(msg.sender, borrower, repayAmount, mTokenCollateral, true);
     }
 
@@ -184,15 +156,7 @@ abstract contract mErc20 is mToken, ImErc20 {
      * @dev Performs a transfer in, reverting upon failure. Returns the amount actually transferred to the protocol, in case of a fee.
      *  This may revert due to insufficient balance or insufficient allowance.
      */
-    function _doTransferIn(
-        address from,
-        uint256 amount
-    )
-        internal
-        virtual
-        override
-        returns (uint256)
-    {
+    function _doTransferIn(address from, uint256 amount) internal virtual override returns (uint256) {
         uint256 balanceBefore = IERC20(underlying).balanceOf(address(this));
         IERC20(underlying).safeTransferFrom(from, address(this), amount);
         uint256 balanceAfter = IERC20(underlying).balanceOf(address(this));
@@ -204,14 +168,7 @@ abstract contract mErc20 is mToken, ImErc20 {
      *  If caller has not called checked protocol's balance, may revert due to insufficient cash held in the contract.
      *  If caller has checked protocol's balance, and verified it is >= amount, this should not revert in normal conditions.
      */
-    function _doTransferOut(
-        address payable to,
-        uint256 amount
-    )
-        internal
-        virtual
-        override
-    {
+    function _doTransferOut(address payable to, uint256 amount) internal virtual override {
         IERC20(underlying).safeTransfer(to, amount);
     }
 }

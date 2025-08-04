@@ -23,7 +23,7 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IRoles } from "./IRoles.sol";
+import {IRoles} from "./IRoles.sol";
 
 interface ImTokenOperationTypes {
     enum OperationType {
@@ -155,9 +155,7 @@ interface ImToken is ImTokenMinimal {
      * @param amount The number of tokens to transfer
      * @return Whether the transfer was successful or not
      */
-    function transferFrom(address src, address dst, uint256 amount)
-        external
-        returns (bool);
+    function transferFrom(address src, address dst, uint256 amount) external returns (bool);
 
     /**
      * @notice Approves `spender` to spend `amount` tokens on behalf of the caller
@@ -173,10 +171,7 @@ interface ImToken is ImTokenMinimal {
      * @param spender The address authorized to spend the tokens
      * @return The current remaining number of tokens `spender` can spend
      */
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
 
     /**
      * @notice Returns the balance of tokens held by `owner`
@@ -197,10 +192,7 @@ interface ImToken is ImTokenMinimal {
      * @param account The address to query the account snapshot for
      * @return (token balance, borrow balance, exchange rate)
      */
-    function getAccountSnapshot(address account)
-        external
-        view
-        returns (uint256, uint256, uint256);
+    function getAccountSnapshot(address account) external view returns (uint256, uint256, uint256);
 
     /**
      * @notice Returns the current borrow rate per block
@@ -232,10 +224,7 @@ interface ImToken is ImTokenMinimal {
      * @param account The address to query the stored borrow balance for
      * @return The stored borrow balance
      */
-    function borrowBalanceStored(address account)
-        external
-        view
-        returns (uint256);
+    function borrowBalanceStored(address account) external view returns (uint256);
 
     /**
      * @notice Returns the current exchange rate, with interest accrued
@@ -268,8 +257,7 @@ interface ImToken is ImTokenMinimal {
      * @param borrower The account having collateral seized
      * @param seizeTokens The number of mTokens to seize
      */
-    function seize(address liquidator, address borrower, uint256 seizeTokens)
-        external;
+    function seize(address liquidator, address borrower, uint256 seizeTokens) external;
 
     /**
      * @notice Accrues interest and reduces reserves by transferring to admin

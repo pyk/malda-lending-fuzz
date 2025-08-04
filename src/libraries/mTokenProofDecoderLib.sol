@@ -16,7 +16,7 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity =0.8.28;
 
-import { BytesLib } from "src/libraries/BytesLib.sol";
+import {BytesLib} from "src/libraries/BytesLib.sol";
 
 /*
  _____ _____ __    ____  _____
@@ -45,10 +45,7 @@ library mTokenProofDecoderLib {
             bool L1inclusion
         )
     {
-        require(
-            journalData.length == ENTRY_SIZE,
-            mTokenProofDecoderLib_InvalidLength()
-        );
+        require(journalData.length == ENTRY_SIZE, mTokenProofDecoderLib_InvalidLength());
 
         // decode action data
         // | Offset | Length | Data Type               |
@@ -63,17 +60,12 @@ library mTokenProofDecoderLib {
         sender = BytesLib.toAddress(BytesLib.slice(journalData, 0, 20), 0);
         market = BytesLib.toAddress(BytesLib.slice(journalData, 20, 20), 0);
         accAmountIn = BytesLib.toUint256(BytesLib.slice(journalData, 40, 32), 0);
-        accAmountOut =
-            BytesLib.toUint256(BytesLib.slice(journalData, 72, 32), 0);
+        accAmountOut = BytesLib.toUint256(BytesLib.slice(journalData, 72, 32), 0);
         chainId = BytesLib.toUint32(BytesLib.slice(journalData, 104, 4), 0);
         dstChainId = BytesLib.toUint32(BytesLib.slice(journalData, 108, 4), 0);
 
-        uint8 rawL1inclusion =
-            BytesLib.toUint8(BytesLib.slice(journalData, 112, 1), 0);
-        require(
-            rawL1inclusion == 0 || rawL1inclusion == 1,
-            mTokenProofDecoderLib_InvalidInclusion()
-        );
+        uint8 rawL1inclusion = BytesLib.toUint8(BytesLib.slice(journalData, 112, 1), 0);
+        require(rawL1inclusion == 0 || rawL1inclusion == 1, mTokenProofDecoderLib_InvalidInclusion());
         L1inclusion = rawL1inclusion == 1;
     }
 
@@ -85,19 +77,7 @@ library mTokenProofDecoderLib {
         uint32 chainId,
         uint32 dstChainId,
         bool L1inclusion
-    )
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return abi.encodePacked(
-            sender,
-            market,
-            accAmountIn,
-            accAmountOut,
-            chainId,
-            dstChainId,
-            L1inclusion
-        );
+    ) internal pure returns (bytes memory) {
+        return abi.encodePacked(sender, market, accAmountIn, accAmountOut, chainId, dstChainId, L1inclusion);
     }
 }

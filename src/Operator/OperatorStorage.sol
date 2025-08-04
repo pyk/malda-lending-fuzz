@@ -24,23 +24,15 @@ pragma solidity =0.8.28;
 */
 
 // interfaces
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { IBlacklister } from "src/interfaces/IBlacklister.sol";
-import { ImTokenOperationTypes } from "src/interfaces/ImToken.sol";
-import {
-    IOperatorData,
-    IOperator,
-    IOperatorDefender
-} from "src/interfaces/IOperator.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {IBlacklister} from "src/interfaces/IBlacklister.sol";
+import {ImTokenOperationTypes} from "src/interfaces/ImToken.sol";
+import {IOperatorData, IOperator, IOperatorDefender} from "src/interfaces/IOperator.sol";
 
 // contracts
-import { ExponentialNoError } from "src/utils/ExponentialNoError.sol";
+import {ExponentialNoError} from "src/utils/ExponentialNoError.sol";
 
-abstract contract OperatorStorage is
-    IOperator,
-    IOperatorDefender,
-    ExponentialNoError
-{
+abstract contract OperatorStorage is IOperator, IOperatorDefender, ExponentialNoError {
     // ----------- STORAGE ------------
     /**
      * @inheritdoc IOperator
@@ -144,8 +136,7 @@ abstract contract OperatorStorage is
         Exp tokensToDenom;
     }
 
-    mapping(address => mapping(ImTokenOperationTypes.OperationType => bool))
-        internal _paused;
+    mapping(address => mapping(ImTokenOperationTypes.OperationType => bool)) internal _paused;
 
     // closeFactorMantissa must be strictly greater than this value
     uint256 internal constant CLOSE_FACTOR_MIN_MANTISSA = 0.05e18; // 0.05
@@ -195,17 +186,10 @@ abstract contract OperatorStorage is
     /**
      * @notice Emitted when pause status is changed
      */
-    event ActionPaused(
-        address indexed mToken,
-        ImTokenOperationTypes.OperationType _type,
-        bool state
-    );
+    event ActionPaused(address indexed mToken, ImTokenOperationTypes.OperationType _type, bool state);
 
     /// @notice Emitted when reward distributor is changed
-    event NewRewardDistributor(
-        address indexed oldRewardDistributor,
-        address indexed newRewardDistributor
-    );
+    event NewRewardDistributor(address indexed oldRewardDistributor, address indexed newRewardDistributor);
     /**
      * @notice Emitted when borrow cap for a mToken is changed
      */
@@ -231,31 +215,23 @@ abstract contract OperatorStorage is
     /**
      * @notice Emitted Emitted when close factor is changed by admin
      */
-    event NewCloseFactor(
-        uint256 oldCloseFactorMantissa, uint256 newCloseFactorMantissa
-    );
+    event NewCloseFactor(uint256 oldCloseFactorMantissa, uint256 newCloseFactorMantissa);
     /**
      * @notice Emitted when a collateral factor is changed by admin
      */
     event NewCollateralFactor(
-        address indexed mToken,
-        uint256 oldCollateralFactorMantissa,
-        uint256 newCollateralFactorMantissa
+        address indexed mToken, uint256 oldCollateralFactorMantissa, uint256 newCollateralFactorMantissa
     );
     /**
      * @notice Emitted when liquidation incentive is changed by admin
      */
     event NewLiquidationIncentive(
-        address market,
-        uint256 oldLiquidationIncentiveMantissa,
-        uint256 newLiquidationIncentiveMantissa
+        address market, uint256 oldLiquidationIncentiveMantissa, uint256 newLiquidationIncentiveMantissa
     );
     /**
      * @notice Emitted when price oracle is changed
      */
-    event NewPriceOracle(
-        address indexed oldPriceOracle, address indexed newPriceOracle
-    );
+    event NewPriceOracle(address indexed oldPriceOracle, address indexed newPriceOracle);
 
     /**
      * @notice Event emitted when rolesOperator is changed
@@ -265,9 +241,7 @@ abstract contract OperatorStorage is
     /**
      * @notice Event emitted when outflow limit is updated
      */
-    event OutflowLimitUpdated(
-        address indexed sender, uint256 oldLimit, uint256 newLimit
-    );
+    event OutflowLimitUpdated(address indexed sender, uint256 oldLimit, uint256 newLimit);
 
     /**
      * @notice Event emitted when outflow reset time window is updated

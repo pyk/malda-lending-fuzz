@@ -19,10 +19,9 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { OwnableUpgradeable } from
-    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { IBlacklister } from "src/interfaces/IBlacklister.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {IBlacklister} from "src/interfaces/IBlacklister.sol";
 
 contract Blacklister is OwnableUpgradeable, IBlacklister {
     // ----------- STORAGE -----------
@@ -42,34 +41,21 @@ contract Blacklister is OwnableUpgradeable, IBlacklister {
         _disableInitializers();
     }
 
-    function initialize(
-        address payable _owner,
-        address _roles
-    )
-        external
-        initializer
-    {
+    function initialize(address payable _owner, address _roles) external initializer {
         __Ownable_init(_owner);
         rolesOperator = IRoles(_roles);
     }
 
     modifier onlyOwnerOrGuardian() {
         require(
-            msg.sender == owner()
-                || rolesOperator.isAllowedFor(
-                    msg.sender, rolesOperator.GUARDIAN_BLACKLIST()
-                ),
+            msg.sender == owner() || rolesOperator.isAllowedFor(msg.sender, rolesOperator.GUARDIAN_BLACKLIST()),
             Blacklister_NotAllowed()
         );
         _;
     }
 
     // ----------- VIEW ------------
-    function getBlacklistedAddresses()
-        external
-        view
-        returns (address[] memory)
-    {
+    function getBlacklistedAddresses() external view returns (address[] memory) {
         return _blacklistedList;
     }
 

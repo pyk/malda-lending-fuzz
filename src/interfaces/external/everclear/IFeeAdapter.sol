@@ -40,8 +40,5 @@ interface IFeeAdapter {
         uint48 _ttl,
         bytes calldata _data,
         FeeParams calldata _feeParams
-    )
-        external
-        payable
-        returns (bytes32 _intentId, Intent memory _intent);
+    ) external payable returns (bytes32 _intentId, Intent memory _intent);
 }

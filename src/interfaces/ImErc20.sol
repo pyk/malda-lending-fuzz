@@ -31,12 +31,7 @@ interface ImErc20 {
      * @param receiver The mTokens receiver
      * @param minAmountOut The min amounts to be received
      */
-    function mint(
-        uint256 mintAmount,
-        address receiver,
-        uint256 minAmountOut
-    )
-        external;
+    function mint(uint256 mintAmount, address receiver, uint256 minAmountOut) external;
 
     /**
      * @notice Sender redeems mTokens in exchange for the underlying asset
@@ -69,12 +64,7 @@ interface ImErc20 {
      * @param borrower the account with the debt being payed off
      * @param repayAmount The amount to repay, or type(uint256).max for the full outstanding amount
      */
-    function repayBehalf(
-        address borrower,
-        uint256 repayAmount
-    )
-        external
-        returns (uint256);
+    function repayBehalf(address borrower, uint256 repayAmount) external returns (uint256);
 
     /**
      * @notice The sender liquidates the borrowers collateral.
@@ -83,12 +73,7 @@ interface ImErc20 {
      * @param repayAmount The amount of the underlying borrowed asset to repay
      * @param mTokenCollateral The market in which to seize collateral from the borrower
      */
-    function liquidate(
-        address borrower,
-        uint256 repayAmount,
-        address mTokenCollateral
-    )
-        external;
+    function liquidate(address borrower, uint256 repayAmount, address mTokenCollateral) external;
 
     /**
      * @notice The sender adds to reserves.

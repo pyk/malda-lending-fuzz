@@ -23,9 +23,8 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { mErc20 } from "./mErc20.sol";
-import { Initializable } from
-    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {mErc20} from "./mErc20.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 abstract contract mErc20Upgradable is mErc20, Initializable {
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -52,17 +51,9 @@ abstract contract mErc20Upgradable is mErc20, Initializable {
         string memory symbol_,
         uint8 decimals_,
         address payable admin_
-    )
-        internal
-    {
+    ) internal {
         _initializeMErc20(
-            underlying_,
-            operator_,
-            interestRateModel_,
-            initialExchangeRateMantissa_,
-            name_,
-            symbol_,
-            decimals_
+            underlying_, operator_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_
         );
         admin = admin_;
     }

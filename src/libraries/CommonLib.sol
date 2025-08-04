@@ -23,7 +23,7 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IGasFeesHelper } from "src/interfaces/IGasFeesHelper.sol";
+import {IGasFeesHelper} from "src/interfaces/IGasFeesHelper.sol";
 
 library CommonLib {
     error CommonLib_LengthMismatch();
@@ -37,24 +37,13 @@ library CommonLib {
         }
     }
 
-    function checkLengthMatch(
-        uint256 l1,
-        uint256 l2,
-        uint256 l3
-    )
-        internal
-        pure
-    {
+    function checkLengthMatch(uint256 l1, uint256 l2, uint256 l3) internal pure {
         if (l1 != l2 || l2 != l3) {
             revert CommonLib_LengthMismatch();
         }
     }
 
-    function computeSum(uint256[] calldata values)
-        internal
-        pure
-        returns (uint256 sum)
-    {
+    function computeSum(uint256[] calldata values) internal pure returns (uint256 sum) {
         uint256 length = values.length;
         for (uint256 i; i < length;) {
             sum += values[i];
@@ -70,10 +59,7 @@ library CommonLib {
         uint256 msgValue,
         mapping(uint32 => bool) storage allowedChains,
         IGasFeesHelper gasHelper
-    )
-        internal
-        view
-    {
+    ) internal view {
         if (amount == 0) {
             revert AmountNotValid();
         }
@@ -81,8 +67,7 @@ library CommonLib {
             revert ChainNotValid();
         }
 
-        uint256 requiredGas =
-            address(gasHelper) != address(0) ? gasHelper.gasFees(dstChainId) : 0;
+        uint256 requiredGas = address(gasHelper) != address(0) ? gasHelper.gasFees(dstChainId) : 0;
 
         if (msgValue < requiredGas) {
             revert NotEnoughGasFee();

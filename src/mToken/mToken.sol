@@ -24,14 +24,13 @@ pragma solidity =0.8.28;
 */
 
 // interfaces
-import { ImToken, ImTokenMinimal } from "src/interfaces/ImToken.sol";
-import { IInterestRateModel } from "src/interfaces/IInterestRateModel.sol";
-import { IOperator, IOperatorDefender } from "src/interfaces/IOperator.sol";
+import {ImToken, ImTokenMinimal} from "src/interfaces/ImToken.sol";
+import {IInterestRateModel} from "src/interfaces/IInterestRateModel.sol";
+import {IOperator, IOperatorDefender} from "src/interfaces/IOperator.sol";
 
 // contracts
-import { mTokenConfiguration } from "./mTokenConfiguration.sol";
-import { ReentrancyGuard } from
-    "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {mTokenConfiguration} from "./mTokenConfiguration.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     constructor() {
@@ -54,13 +53,8 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    )
-        internal
-    {
-        require(
-            accrualBlockTimestamp == 0 && borrowIndex == 0,
-            mt_AlreadyInitialized()
-        );
+    ) internal {
+        require(accrualBlockTimestamp == 0 && borrowIndex == 0, mt_AlreadyInitialized());
         require(initialExchangeRateMantissa_ > 0, mt_ExchangeRateNotValid());
         // Set initial exchange rate
         initialExchangeRateMantissa = initialExchangeRateMantissa_;
@@ -81,39 +75,22 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function allowance(
-        address owner,
-        address spender
-    )
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function allowance(address owner, address spender) external view override returns (uint256) {
         return transferAllowances[owner][spender];
     }
 
     /**
      * @inheritdoc ImTokenMinimal
      */
-    function balanceOf(address owner)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function balanceOf(address owner) external view override returns (uint256) {
         return accountTokens[owner];
     }
 
     /**
      * @inheritdoc ImToken
      */
-    function balanceOfUnderlying(address owner)
-        external
-        override
-        returns (uint256)
-    {
-        Exp memory exchangeRate = Exp({ mantissa: exchangeRateCurrent() });
+    function balanceOfUnderlying(address owner) external override returns (uint256) {
+        Exp memory exchangeRate = Exp({mantissa: exchangeRateCurrent()});
         return mul_ScalarTruncate(exchangeRate, accountTokens[owner]);
     }
 
@@ -121,26 +98,15 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function getAccountSnapshot(address account)
-        external
-        view
-        override
-        returns (uint256, uint256, uint256)
-    {
-        return (
-            accountTokens[account],
-            _borrowBalanceStored(account),
-            _exchangeRateStored()
-        );
+    function getAccountSnapshot(address account) external view override returns (uint256, uint256, uint256) {
+        return (accountTokens[account], _borrowBalanceStored(account), _exchangeRateStored());
     }
 
     /**
      * @inheritdoc ImToken
      */
     function borrowRatePerBlock() external view override returns (uint256) {
-        return IInterestRateModel(interestRateModel).getBorrowRate(
-            _getCashPrior(), totalBorrows, totalReserves
-        );
+        return IInterestRateModel(interestRateModel).getBorrowRate(_getCashPrior(), totalBorrows, totalReserves);
     }
 
     /**
@@ -155,12 +121,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function borrowBalanceStored(address account)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function borrowBalanceStored(address account) external view override returns (uint256) {
         return _borrowBalanceStored(account);
     }
 
@@ -182,15 +143,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function transfer(
-        address dst,
-        uint256 amount
-    )
-        external
-        override
-        nonReentrant
-        returns (bool)
-    {
+    function transfer(address dst, uint256 amount) external override nonReentrant returns (bool) {
         _transferTokens(msg.sender, msg.sender, dst, amount);
 
         return true;
@@ -199,16 +152,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function transferFrom(
-        address src,
-        address dst,
-        uint256 amount
-    )
-        external
-        override
-        nonReentrant
-        returns (bool)
-    {
+    function transferFrom(address src, address dst, uint256 amount) external override nonReentrant returns (bool) {
         _transferTokens(msg.sender, src, dst, amount);
 
         return true;
@@ -217,14 +161,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function approve(
-        address spender,
-        uint256 amount
-    )
-        external
-        override
-        returns (bool)
-    {
+    function approve(address spender, uint256 amount) external override returns (bool) {
         transferAllowances[msg.sender][spender] = amount;
         emit Approval(msg.sender, spender, amount);
         return true;
@@ -234,12 +171,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function totalBorrowsCurrent()
-        external
-        override
-        nonReentrant
-        returns (uint256)
-    {
+    function totalBorrowsCurrent() external override nonReentrant returns (uint256) {
         _accrueInterest();
         return totalBorrows;
     }
@@ -247,12 +179,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function borrowBalanceCurrent(address account)
-        external
-        override
-        nonReentrant
-        returns (uint256)
-    {
+    function borrowBalanceCurrent(address account) external override nonReentrant returns (uint256) {
         _accrueInterest();
         return _borrowBalanceStored(account);
     }
@@ -260,12 +187,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function exchangeRateCurrent()
-        public
-        override
-        nonReentrant
-        returns (uint256)
-    {
+    function exchangeRateCurrent() public override nonReentrant returns (uint256) {
         _accrueInterest();
         return _exchangeRateStored();
     }
@@ -273,31 +195,16 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
     /**
      * @inheritdoc ImToken
      */
-    function seize(
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    )
-        external
-        override
-        nonReentrant
-    {
+    function seize(address liquidator, address borrower, uint256 seizeTokens) external override nonReentrant {
         _seize(msg.sender, liquidator, borrower, seizeTokens);
     }
 
     /**
      * @inheritdoc ImToken
      */
-    function reduceReserves(uint256 reduceAmount)
-        external
-        override
-        nonReentrant
-    {
+    function reduceReserves(uint256 reduceAmount) external override nonReentrant {
         require(
-            msg.sender == admin
-                || rolesOperator.isAllowedFor(
-                    msg.sender, rolesOperator.GUARDIAN_RESERVE()
-                ),
+            msg.sender == admin || rolesOperator.isAllowedFor(msg.sender, rolesOperator.GUARDIAN_RESERVE()),
             mt_OnlyAdminOrRole()
         );
 
@@ -328,11 +235,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param account The address whose balance should be calculated
      * @return (error code, the calculated balance or 0 if error code is non-zero)
      */
-    function _borrowBalanceStored(address account)
-        internal
-        view
-        returns (uint256)
-    {
+    function _borrowBalanceStored(address account) internal view returns (uint256) {
         /* Get borrowBalance and borrowIndex */
         BorrowSnapshot storage borrowSnapshot = accountBorrows[account];
 
@@ -360,13 +263,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param minAmountOut The minimum amount to be received
      * @param doTransfer If an actual transfer should be performed
      */
-    function _mint(
-        address user,
-        address receiver,
-        uint256 mintAmount,
-        uint256 minAmountOut,
-        bool doTransfer
-    )
+    function _mint(address user, address receiver, uint256 mintAmount, uint256 minAmountOut, bool doTransfer)
         internal
         nonReentrant
     {
@@ -382,11 +279,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param redeemTokens The number of mTokens to redeem into underlying
      * @param doTransfer If an actual transfer should be performed
      */
-    function _redeem(
-        address user,
-        uint256 redeemTokens,
-        bool doTransfer
-    )
+    function _redeem(address user, uint256 redeemTokens, bool doTransfer)
         internal
         nonReentrant
         returns (uint256 underlyingAmount)
@@ -403,14 +296,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param redeemAmount The amount of underlying to receive from redeeming mTokens
      * @param doTransfer If an actual transfer should be performed
      */
-    function _redeemUnderlying(
-        address user,
-        uint256 redeemAmount,
-        bool doTransfer
-    )
-        internal
-        nonReentrant
-    {
+    function _redeemUnderlying(address user, uint256 redeemAmount, bool doTransfer) internal nonReentrant {
         _accrueInterest();
         // emits redeem-specific logs on errors, so we don't need to
         __redeem(payable(user), 0, redeemAmount, doTransfer);
@@ -422,14 +308,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param borrowAmount The amount of the underlying asset to borrow
      * @param doTransfer If an actual transfer should be performed
      */
-    function _borrow(
-        address user,
-        uint256 borrowAmount,
-        bool doTransfer
-    )
-        internal
-        nonReentrant
-    {
+    function _borrow(address user, uint256 borrowAmount, bool doTransfer) internal nonReentrant {
         _accrueInterest();
         // emits borrow-specific logs on errors, so we don't need to
         __borrow(payable(user), payable(user), borrowAmount, doTransfer);
@@ -441,14 +320,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param receiver The underlying receiver address
      * @param borrowAmount The amount of the underlying asset to borrow
      */
-    function _borrowWithReceiver(
-        address user,
-        address receiver,
-        uint256 borrowAmount
-    )
-        internal
-        nonReentrant
-    {
+    function _borrowWithReceiver(address user, address receiver, uint256 borrowAmount) internal nonReentrant {
         _accrueInterest();
         __borrow(payable(user), payable(receiver), borrowAmount, true);
     }
@@ -458,14 +330,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param repayAmount The amount to repay, or `type(uint256).max` for the full outstanding amount
      * @param doTransfer If an actual transfer should be performed
      */
-    function _repay(
-        uint256 repayAmount,
-        bool doTransfer
-    )
-        internal
-        nonReentrant
-        returns (uint256)
-    {
+    function _repay(uint256 repayAmount, bool doTransfer) internal nonReentrant returns (uint256) {
         _accrueInterest();
         // emits repay-borrow-specific logs on errors, so we don't need to
         return __repay(msg.sender, msg.sender, repayAmount, doTransfer);
@@ -477,11 +342,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param repayAmount The amount to repay, or `type(uint256).max` for the full outstanding amount
      * @param doTransfer If an actual transfer should be performed
      */
-    function _repayBehalf(
-        address borrower,
-        uint256 repayAmount,
-        bool doTransfer
-    )
+    function _repayBehalf(address borrower, uint256 repayAmount, bool doTransfer)
         internal
         nonReentrant
         returns (uint256)
@@ -506,18 +367,13 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         uint256 repayAmount,
         address mTokenCollateral,
         bool doTransfer
-    )
-        internal
-        nonReentrant
-    {
+    ) internal nonReentrant {
         _accrueInterest();
 
         ImToken(mTokenCollateral).accrueInterest();
 
         // emits borrow-specific logs on errors, so we don't need to
-        __liquidate(
-            liquidator, borrower, repayAmount, mTokenCollateral, doTransfer
-        );
+        __liquidate(liquidator, borrower, repayAmount, mTokenCollateral, doTransfer);
     }
 
     /**
@@ -529,17 +385,8 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param borrower The account having collateral seized
      * @param seizeTokens The number of mTokens to seize
      */
-    function _seize(
-        address seizerToken,
-        address liquidator,
-        address borrower,
-        uint256 seizeTokens
-    )
-        internal
-    {
-        IOperatorDefender(operator).beforeMTokenSeize(
-            address(this), seizerToken, liquidator, borrower
-        );
+    function _seize(address seizerToken, address liquidator, address borrower, uint256 seizeTokens) internal {
+        IOperatorDefender(operator).beforeMTokenSeize(address(this), seizerToken, liquidator, borrower);
 
         require(borrower != liquidator, mt_InvalidInput());
 
@@ -548,12 +395,10 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
          *  borrowerTokensNew = accountTokens[borrower] - seizeTokens
          *  liquidatorTokensNew = accountTokens[liquidator] + seizeTokens
          */
-        uint256 protocolSeizeTokens =
-            mul_(seizeTokens, Exp({ mantissa: PROTOCOL_SEIZE_SHARE_MANTISSA }));
+        uint256 protocolSeizeTokens = mul_(seizeTokens, Exp({mantissa: PROTOCOL_SEIZE_SHARE_MANTISSA}));
         uint256 liquidatorSeizeTokens = seizeTokens - protocolSeizeTokens;
-        Exp memory exchangeRate = Exp({ mantissa: _exchangeRateStored() });
-        uint256 protocolSeizeAmount =
-            mul_ScalarTruncate(exchangeRate, protocolSeizeTokens);
+        Exp memory exchangeRate = Exp({mantissa: _exchangeRateStored()});
+        uint256 protocolSeizeAmount = mul_ScalarTruncate(exchangeRate, protocolSeizeTokens);
         uint256 totalReservesNew = totalReserves + protocolSeizeAmount;
 
         /////////////////////////
@@ -564,8 +409,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         totalReserves = totalReservesNew;
         totalSupply = totalSupply - protocolSeizeTokens;
         accountTokens[borrower] = accountTokens[borrower] - seizeTokens;
-        accountTokens[liquidator] =
-            accountTokens[liquidator] + liquidatorSeizeTokens;
+        accountTokens[liquidator] = accountTokens[liquidator] + liquidatorSeizeTokens;
 
         /* Emit a Transfer event */
         emit Transfer(borrower, liquidator, liquidatorSeizeTokens);
@@ -624,43 +468,30 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         uint256 repayAmount,
         address mTokenCollateral,
         bool doTransfer
-    )
-        internal
-    {
+    ) internal {
         require(borrower != liquidator, mt_InvalidInput());
-        require(
-            repayAmount > 0 && repayAmount != type(uint256).max,
-            mt_InvalidInput()
-        );
+        require(repayAmount > 0 && repayAmount != type(uint256).max, mt_InvalidInput());
 
-        IOperatorDefender(operator).beforeMTokenLiquidate(
-            address(this), mTokenCollateral, borrower, repayAmount
-        );
+        IOperatorDefender(operator).beforeMTokenLiquidate(address(this), mTokenCollateral, borrower, repayAmount);
 
         require(
-            ImToken(mTokenCollateral).accrualBlockTimestamp()
-                == _getBlockTimestamp(),
+            ImToken(mTokenCollateral).accrualBlockTimestamp() == _getBlockTimestamp(),
             mt_CollateralBlockTimestampNotValid()
         );
 
         /* Fail if repayBorrow fails */
-        uint256 actualRepayAmount =
-            __repay(liquidator, borrower, repayAmount, doTransfer);
+        uint256 actualRepayAmount = __repay(liquidator, borrower, repayAmount, doTransfer);
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
         // (No safe failures beyond this point)
 
         /* We calculate the number of collateral tokens that will be seized */
-        uint256 seizeTokens = IOperator(operator).liquidateCalculateSeizeTokens(
-            address(this), mTokenCollateral, actualRepayAmount
-        );
+        uint256 seizeTokens =
+            IOperator(operator).liquidateCalculateSeizeTokens(address(this), mTokenCollateral, actualRepayAmount);
 
         /* Revert if borrower collateral token balance < seizeTokens */
-        require(
-            ImToken(mTokenCollateral).balanceOf(borrower) >= seizeTokens,
-            mt_LiquidateSeizeTooMuch()
-        );
+        require(ImToken(mTokenCollateral).balanceOf(borrower) >= seizeTokens, mt_LiquidateSeizeTooMuch());
 
         // If this is also the collateral, run _seize to avoid re-entrancy, otherwise make an external call
         if (address(mTokenCollateral) == address(this)) {
@@ -670,13 +501,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         }
 
         /* We emit a LiquidateBorrow event */
-        emit LiquidateBorrow(
-            liquidator,
-            borrower,
-            actualRepayAmount,
-            address(mTokenCollateral),
-            seizeTokens
-        );
+        emit LiquidateBorrow(liquidator, borrower, actualRepayAmount, address(mTokenCollateral), seizeTokens);
     }
     /**
      * @notice Borrows are repaid by another user (possibly the borrower).
@@ -686,23 +511,14 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param doTransfer If an actual transfer should be performed
      */
 
-    function __repay(
-        address payer,
-        address borrower,
-        uint256 repayAmount,
-        bool doTransfer
-    )
-        private
-        returns (uint256)
-    {
+    function __repay(address payer, address borrower, uint256 repayAmount, bool doTransfer) private returns (uint256) {
         IOperatorDefender(operator).beforeMTokenRepay(address(this), borrower);
 
         /* We fetch the amount the borrower owes, with accumulated interest */
         uint256 accountBorrowsPrev = _borrowBalanceStored(borrower);
 
         /* If repayAmount == type(uint256).max , repayAmount = accountBorrows */
-        uint256 repayAmountFinal =
-            repayAmount == type(uint256).max ? accountBorrowsPrev : repayAmount;
+        uint256 repayAmountFinal = repayAmount == type(uint256).max ? accountBorrowsPrev : repayAmount;
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -715,9 +531,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
          *  _doTransferIn reverts if anything goes wrong, since we can't be sure if side effects occurred.
          *   it returns the amount actually transferred, in case of a fee.
          */
-        uint256 actualRepayAmount = doTransfer
-            ? _doTransferIn(payer, repayAmountFinal)
-            : repayAmountFinal;
+        uint256 actualRepayAmount = doTransfer ? _doTransferIn(payer, repayAmountFinal) : repayAmountFinal;
         totalUnderlying += actualRepayAmount;
 
         /*
@@ -734,13 +548,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         totalBorrows = totalBorrowsNew;
 
         /* We emit a RepayBorrow event */
-        emit RepayBorrow(
-            payer,
-            borrower,
-            actualRepayAmount,
-            accountBorrowsNew,
-            totalBorrowsNew
-        );
+        emit RepayBorrow(payer, borrower, actualRepayAmount, accountBorrowsNew, totalBorrowsNew);
 
         return actualRepayAmount;
     }
@@ -749,17 +557,10 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @notice Users borrow assets from the protocol to their own address
      * @param borrowAmount The amount of the underlying asset to borrow
      */
-    function __borrow(
-        address payable borrower,
-        address payable receiver,
-        uint256 borrowAmount,
-        bool doTransfer
-    )
+    function __borrow(address payable borrower, address payable receiver, uint256 borrowAmount, bool doTransfer)
         private
     {
-        IOperatorDefender(operator).beforeMTokenBorrow(
-            address(this), borrower, borrowAmount
-        );
+        IOperatorDefender(operator).beforeMTokenBorrow(address(this), borrower, borrowAmount);
 
         require(_getCashPrior() >= borrowAmount, mt_BorrowCashNotAvailable());
 
@@ -799,19 +600,14 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         emit Borrow(borrower, borrowAmount, accountBorrowsNew, totalBorrowsNew);
     }
 
-    function __redeem(
-        address payable redeemer,
-        uint256 redeemTokensIn,
-        uint256 redeemAmountIn,
-        bool doTransfer
-    )
+    function __redeem(address payable redeemer, uint256 redeemTokensIn, uint256 redeemAmountIn, bool doTransfer)
         private
         returns (uint256 redeemAmount)
     {
         require(redeemTokensIn == 0 || redeemAmountIn == 0, mt_InvalidInput());
 
         /* exchangeRate = invoke Exchange Rate Stored() */
-        Exp memory exchangeRate = Exp({ mantissa: _exchangeRateStored() });
+        Exp memory exchangeRate = Exp({mantissa: _exchangeRateStored()});
 
         uint256 redeemTokens;
         /* If redeemTokensIn > 0: */
@@ -837,9 +633,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         }
 
         /* Fail if redeem not allowed */
-        IOperatorDefender(operator).beforeMTokenRedeem(
-            address(this), redeemer, redeemTokens
-        );
+        IOperatorDefender(operator).beforeMTokenRedeem(address(this), redeemer, redeemTokens);
 
         require(_getCashPrior() >= redeemAmount, mt_RedeemCashNotAvailable());
 
@@ -879,18 +673,12 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param doTransfer If an actual transfer should be performed
      */
 
-    function __mint(
-        address minter,
-        address receiver,
-        uint256 mintAmount,
-        uint256 minAmountOut,
-        bool doTransfer
-    )
+    function __mint(address minter, address receiver, uint256 mintAmount, uint256 minAmountOut, bool doTransfer)
         private
     {
         IOperatorDefender(operator).beforeMTokenMint(address(this), minter);
 
-        Exp memory exchangeRate = Exp({ mantissa: _exchangeRateStored() });
+        Exp memory exchangeRate = Exp({mantissa: _exchangeRateStored()});
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -904,8 +692,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
          *  in case of a fee. On success, the mToken holds an additional `actualMintAmount`
          *  of cash.
          */
-        uint256 actualMintAmount =
-            doTransfer ? _doTransferIn(minter, mintAmount) : mintAmount;
+        uint256 actualMintAmount = doTransfer ? _doTransferIn(minter, mintAmount) : mintAmount;
         totalUnderlying += actualMintAmount;
 
         /*
@@ -940,8 +727,7 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
         IOperatorDefender(operator).afterMTokenMint(address(this));
 
         // Activate market by default if not entered already
-        bool isEntered =
-            IOperator(operator).checkMembership(minter, address(this));
+        bool isEntered = IOperator(operator).checkMembership(minter, address(this));
         if (!isEntered) {
             IOperator(operator).enterMarketsWithSender(minter);
         }
@@ -955,17 +741,8 @@ abstract contract mToken is mTokenConfiguration, ReentrancyGuard {
      * @param dst The address of the destination account
      * @param tokens The number of tokens to transfer
      */
-    function _transferTokens(
-        address spender,
-        address src,
-        address dst,
-        uint256 tokens
-    )
-        private
-    {
-        IOperatorDefender(operator).beforeMTokenTransfer(
-            address(this), src, dst, tokens
-        );
+    function _transferTokens(address spender, address src, address dst, uint256 tokens) private {
+        IOperatorDefender(operator).beforeMTokenTransfer(address(this), src, dst, tokens);
 
         require(src != dst, mt_TransferNotValid());
 

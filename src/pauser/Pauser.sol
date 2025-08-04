@@ -24,14 +24,14 @@ pragma solidity =0.8.28;
 */
 
 // contracts
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 // interfaces
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { IPauser } from "src/interfaces/IPauser.sol";
-import { IOperator } from "src/interfaces/IOperator.sol";
-import { ImTokenOperationTypes } from "src/interfaces/ImToken.sol";
-import { ImTokenGateway } from "src/interfaces/ImTokenGateway.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {IPauser} from "src/interfaces/IPauser.sol";
+import {IOperator} from "src/interfaces/IOperator.sol";
+import {ImTokenOperationTypes} from "src/interfaces/ImToken.sol";
+import {ImTokenGateway} from "src/interfaces/ImTokenGateway.sol";
 
 contract Pauser is Ownable, IPauser {
     // ----------- STORAGE ------------
@@ -42,13 +42,7 @@ contract Pauser is Ownable, IPauser {
     mapping(address _contract => bool _registered) public registeredContracts;
     mapping(address _contract => PausableType _type) public contractTypes;
 
-    constructor(
-        address _roles,
-        address _operator,
-        address _owner
-    )
-        Ownable(_owner)
-    {
+    constructor(address _roles, address _operator, address _owner) Ownable(_owner) {
         require(_roles != address(0), Pauser_AddressNotValid());
         // @audit this is a bug
         // require(_operator != address(0), Pauser_AddressNotValid());
@@ -62,13 +56,7 @@ contract Pauser is Ownable, IPauser {
      * @param _contract the pausable contract
      * @param _contractType the pausable contract type
      */
-    function addPausableMarket(
-        address _contract,
-        PausableType _contractType
-    )
-        external
-        onlyOwner
-    {
+    function addPausableMarket(address _contract, PausableType _contractType) external onlyOwner {
         require(_contract != address(0), Pauser_AddressNotValid());
         if (registeredContracts[_contract]) {
             return;
@@ -88,8 +76,7 @@ contract Pauser is Ownable, IPauser {
             revert Pauser_EntryNotFound();
         }
         uint256 index = _findIndex(_contract);
-        pausableContracts[index] =
-            pausableContracts[pausableContracts.length - 1];
+        pausableContracts[index] = pausableContracts[pausableContracts.length - 1];
         pausableContracts.pop();
         registeredContracts[_contract] = false;
         contractTypes[_contract] = PausableType.NonPausable;
@@ -107,12 +94,7 @@ contract Pauser is Ownable, IPauser {
     /**
      * @inheritdoc IPauser
      */
-    function emergencyPauseMarketFor(
-        address _market,
-        ImTokenOperationTypes.OperationType _pauseType
-    )
-        external
-    {
+    function emergencyPauseMarketFor(address _market, ImTokenOperationTypes.OperationType _pauseType) external {
         _pauseMarketOperation(_market, _pauseType);
     }
 
@@ -148,26 +130,13 @@ contract Pauser is Ownable, IPauser {
         emit MarketPaused(_market);
     }
 
-    function _pauseMarketOperation(
-        address _market,
-        ImTokenOperationTypes.OperationType _pauseType
-    )
-        private
-    {
+    function _pauseMarketOperation(address _market, ImTokenOperationTypes.OperationType _pauseType) private {
         _pause(_market, _pauseType);
         emit MarketPausedFor(_market, _pauseType);
     }
 
-    function _pause(
-        address _market,
-        ImTokenOperationTypes.OperationType _pauseType
-    )
-        private
-    {
-        require(
-            roles.isAllowedFor(msg.sender, roles.PAUSE_MANAGER()),
-            Pauser_NotAuthorized()
-        );
+    function _pause(address _market, ImTokenOperationTypes.OperationType _pauseType) private {
+        require(roles.isAllowedFor(msg.sender, roles.PAUSE_MANAGER()), Pauser_NotAuthorized());
         PausableType _type = contractTypes[_market];
         if (_type == PausableType.Host) {
             operator.setPaused(_market, _pauseType, true);

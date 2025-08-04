@@ -23,11 +23,11 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { ImErc20 } from "src/interfaces/ImErc20.sol";
-import { ImTokenMinimal } from "src/interfaces/ImToken.sol";
-import { ImTokenGateway } from "src/interfaces/ImTokenGateway.sol";
+import {ImErc20} from "src/interfaces/ImErc20.sol";
+import {ImTokenMinimal} from "src/interfaces/ImToken.sol";
+import {ImTokenGateway} from "src/interfaces/ImTokenGateway.sol";
 
 interface IWrappedNative {
     function deposit() external payable;
@@ -43,12 +43,7 @@ contract WrapAndSupply {
     error WrapAndSupply_AmountNotValid();
 
     // ----------- EVENTS ------------
-    event WrappedAndSupplied(
-        address indexed sender,
-        address indexed receiver,
-        address indexed market,
-        uint256 amount
-    );
+    event WrappedAndSupplied(address indexed sender, address indexed receiver, address indexed market, uint256 amount);
 
     constructor(address _wrappedNative) {
         require(_wrappedNative != address(0), WrapAndSupply_AddressNotValid());
@@ -61,19 +56,9 @@ contract WrapAndSupply {
      * @param mToken The market address
      * @param receiver The mToken receiver
      */
-    function wrapAndSupplyOnHostMarket(
-        address mToken,
-        address receiver,
-        uint256 minAmount
-    )
-        external
-        payable
-    {
+    function wrapAndSupplyOnHostMarket(address mToken, address receiver, uint256 minAmount) external payable {
         address underlying = ImTokenMinimal(mToken).underlying();
-        require(
-            underlying == address(wrappedNative),
-            WrapAndSupply_AddressNotValid()
-        );
+        require(underlying == address(wrappedNative), WrapAndSupply_AddressNotValid());
 
         uint256 amount = _wrap();
 
@@ -90,19 +75,12 @@ contract WrapAndSupply {
      * @param receiver The receiver
      * @param selector The host chain function selector
      */
-    function wrapAndSupplyOnExtensionMarket(
-        address mTokenGateway,
-        address receiver,
-        bytes4 selector
-    )
+    function wrapAndSupplyOnExtensionMarket(address mTokenGateway, address receiver, bytes4 selector)
         external
         payable
     {
         address underlying = ImTokenGateway(mTokenGateway).underlying();
-        require(
-            underlying == address(wrappedNative),
-            WrapAndSupply_AddressNotValid()
-        );
+        require(underlying == address(wrappedNative), WrapAndSupply_AddressNotValid());
 
         uint256 amount = _wrap();
 
@@ -116,7 +94,7 @@ contract WrapAndSupply {
         uint256 amount = msg.value;
         require(amount > 0, WrapAndSupply_AmountNotValid());
 
-        wrappedNative.deposit{ value: amount }();
+        wrappedNative.deposit{value: amount}();
         return amount;
     }
 }

@@ -28,9 +28,7 @@ interface ImErc20Host {
     /**
      * @notice Emitted when a user updates allowed callers
      */
-    event AllowedCallerUpdated(
-        address indexed sender, address indexed caller, bool status
-    );
+    event AllowedCallerUpdated(address indexed sender, address indexed caller, bool status);
 
     /**
      * @notice Emitted when a chain id whitelist status is updated
@@ -54,57 +52,39 @@ interface ImErc20Host {
      * @notice Emitted when a mint operation is executed
      */
     event mErc20Host_MintExternal(
-        address indexed msgSender,
-        address indexed srcSender,
-        address indexed receiver,
-        uint32 chainId,
-        uint256 amount
+        address indexed msgSender, address indexed srcSender, address indexed receiver, uint32 chainId, uint256 amount
     );
 
     /**
      * @notice Emitted when a borrow operation is executed
      */
     event mErc20Host_BorrowExternal(
-        address indexed msgSender,
-        address indexed srcSender,
-        uint32 indexed chainId,
-        uint256 amount
+        address indexed msgSender, address indexed srcSender, uint32 indexed chainId, uint256 amount
     );
 
     /**
      * @notice Emitted when a repay operation is executed
      */
     event mErc20Host_RepayExternal(
-        address indexed msgSender,
-        address indexed srcSender,
-        address indexed position,
-        uint32 chainId,
-        uint256 amount
+        address indexed msgSender, address indexed srcSender, address indexed position, uint32 chainId, uint256 amount
     );
 
     /**
      * @notice Emitted when a withdrawal is executed
      */
     event mErc20Host_WithdrawExternal(
-        address indexed msgSender,
-        address indexed srcSender,
-        uint32 indexed chainId,
-        uint256 amount
+        address indexed msgSender, address indexed srcSender, uint32 indexed chainId, uint256 amount
     );
 
     /**
      * @notice Emitted when a borrow operation is triggered for an extension chain
      */
-    event mErc20Host_BorrowOnExtensionChain(
-        address indexed sender, uint32 dstChainId, uint256 amount
-    );
+    event mErc20Host_BorrowOnExtensionChain(address indexed sender, uint32 dstChainId, uint256 amount);
 
     /**
      * @notice Emitted when a withdraw operation is triggered for an extension chain
      */
-    event mErc20Host_WithdrawOnExtensionChain(
-        address indexed sender, uint32 dstChainId, uint256 amount
-    );
+    event mErc20Host_WithdrawOnExtensionChain(address indexed sender, uint32 dstChainId, uint256 amount);
 
     /**
      * @notice Emitted when gas fees are updated for a dst chain
@@ -184,10 +164,7 @@ interface ImErc20Host {
     /**
      * @notice Returns the proof data journal
      */
-    function getProofData(address user, uint32 dstId)
-        external
-        view
-        returns (uint256, uint256);
+    function getProofData(address user, uint32 dstId) external view returns (uint256, uint256);
 
     // ----------- PUBLIC -----------
     /**
@@ -198,13 +175,8 @@ interface ImErc20Host {
      * @param borrower The address that borrow is executed for
      * @param minAmount The min amount of underlying to be accounted for
      */
-    function mintOrBorrowMigration(
-        bool mint,
-        uint256 amount,
-        address receiver,
-        address borrower,
-        uint256 minAmount
-    ) external;
+    function mintOrBorrowMigration(bool mint, uint256 amount, address receiver, address borrower, uint256 minAmount)
+        external;
 
     /**
      * @notice Extract amount to be used for rebalancing operation
@@ -273,9 +245,5 @@ interface ImErc20Host {
      * @param amount The amount to withdraw
      * @param dstChainId The destination chain to recieve funds
      */
-    function performExtensionCall(
-        uint256 actionType,
-        uint256 amount,
-        uint32 dstChainId
-    ) external payable;
+    function performExtensionCall(uint256 actionType, uint256 amount, uint32 dstChainId) external payable;
 }

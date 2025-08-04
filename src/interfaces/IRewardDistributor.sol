@@ -50,36 +50,21 @@ interface IRewardDistributorData {
 }
 
 interface IRewardDistributor {
-    event RewardAccrued(
-        address indexed rewardToken,
-        address indexed user,
-        uint256 deltaAccrued,
-        uint256 totalAccrued
-    );
+    event RewardAccrued(address indexed rewardToken, address indexed user, uint256 deltaAccrued, uint256 totalAccrued);
 
-    event RewardGranted(
-        address indexed rewardToken, address indexed user, uint256 amount
-    );
+    event RewardGranted(address indexed rewardToken, address indexed user, uint256 amount);
 
-    event SupplySpeedUpdated(
-        address indexed rewardToken, address indexed mToken, uint256 supplySpeed
-    );
+    event SupplySpeedUpdated(address indexed rewardToken, address indexed mToken, uint256 supplySpeed);
 
-    event BorrowSpeedUpdated(
-        address indexed rewardToken, address indexed mToken, uint256 borrowSpeed
-    );
+    event BorrowSpeedUpdated(address indexed rewardToken, address indexed mToken, uint256 borrowSpeed);
 
     event OperatorSet(address indexed oldOperator, address indexed newOperator);
 
     event WhitelistedToken(address indexed token);
 
-    event SupplyIndexNotified(
-        address indexed rewardToken, address indexed mToken
-    );
+    event SupplyIndexNotified(address indexed rewardToken, address indexed mToken);
 
-    event BorrowIndexNotified(
-        address indexed rewardToken, address indexed mToken
-    );
+    event BorrowIndexNotified(address indexed rewardToken, address indexed mToken);
 
     /**
      * @notice The operator that rewards are distributed to

@@ -12,10 +12,10 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity =0.8.28;
 
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { ImTokenMinimal } from "src/interfaces/ImToken.sol";
-import { IOracleOperator } from "src/interfaces/IOracleOperator.sol";
-import { IDefaultAdapter } from "src/interfaces/IDefaultAdapter.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {ImTokenMinimal} from "src/interfaces/ImToken.sol";
+import {IOracleOperator} from "src/interfaces/IOracleOperator.sol";
+import {IDefaultAdapter} from "src/interfaces/IDefaultAdapter.sol";
 
 contract MixedPriceOracleV3 is IOracleOperator {
     uint256 public immutable STALENESS_PERIOD;
@@ -55,12 +55,7 @@ contract MixedPriceOracleV3 is IOracleOperator {
         emit StalenessUpdated(symbol, val);
     }
 
-    function setConfig(
-        string memory symbol,
-        IDefaultAdapter.PriceConfig memory config
-    )
-        external
-    {
+    function setConfig(string memory symbol, IDefaultAdapter.PriceConfig memory config) external {
         if (!roles.isAllowedFor(msg.sender, roles.GUARDIAN_ORACLE())) {
             revert MixedPriceOracle_Unauthorized();
         }
@@ -77,44 +72,27 @@ contract MixedPriceOracleV3 is IOracleOperator {
     }
 
     // price is extended for operator usage based on decimals of exchangeRate
-    function getUnderlyingPrice(address mToken)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getUnderlyingPrice(address mToken) external view override returns (uint256) {
         // ImTokenMinimal cast is needed for `.symbol()` call. No need to import a different interface
-        string memory symbol =
-            ImTokenMinimal(ImTokenMinimal(mToken).underlying()).symbol();
+        string memory symbol = ImTokenMinimal(ImTokenMinimal(mToken).underlying()).symbol();
         IDefaultAdapter.PriceConfig memory config = configs[symbol];
         uint256 priceUsd = _getPriceUSD(symbol);
         return priceUsd * 10 ** (18 - config.underlyingDecimals);
     }
 
-    function _getPriceUSD(string memory symbol)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getPriceUSD(string memory symbol) internal view returns (uint256) {
         IDefaultAdapter.PriceConfig memory config = configs[symbol];
-        (uint256 feedPrice, uint256 feedDecimals) =
-            _getLatestPrice(symbol, config);
+        (uint256 feedPrice, uint256 feedDecimals) = _getLatestPrice(symbol, config);
         uint256 price = feedPrice * 10 ** (18 - feedDecimals);
 
-        if (
-            keccak256(abi.encodePacked(config.toSymbol))
-                != keccak256(abi.encodePacked("USD"))
-        ) {
+        if (keccak256(abi.encodePacked(config.toSymbol)) != keccak256(abi.encodePacked("USD"))) {
             price = (price * _getPriceUSD(config.toSymbol)) / 10 ** 18;
         }
 
         return price;
     }
 
-    function _getLatestPrice(
-        string memory symbol,
-        IDefaultAdapter.PriceConfig memory config
-    )
+    function _getLatestPrice(string memory symbol, IDefaultAdapter.PriceConfig memory config)
         internal
         view
         returns (uint256, uint256)
@@ -130,10 +108,7 @@ contract MixedPriceOracleV3 is IOracleOperator {
         require(price > 0, MixedPriceOracle_InvalidPrice());
 
         // Check for staleness
-        require(
-            block.timestamp - updatedAt < _getStaleness(symbol),
-            MixedPriceOracle_StalePrice()
-        );
+        require(block.timestamp - updatedAt < _getStaleness(symbol), MixedPriceOracle_StalePrice());
 
         uint256 decimals = feed.decimals();
         uint256 uPrice = uint256(price);
@@ -141,11 +116,7 @@ contract MixedPriceOracleV3 is IOracleOperator {
         return (uPrice, decimals);
     }
 
-    function _getStaleness(string memory symbol)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getStaleness(string memory symbol) internal view returns (uint256) {
         uint256 _registered = stalenessPerSymbol[symbol];
         return _registered > 0 ? _registered : STALENESS_PERIOD;
     }

@@ -24,11 +24,11 @@ pragma solidity =0.8.28;
 */
 
 // interfaces
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { IOperator } from "src/interfaces/IOperator.sol";
-import { IInterestRateModel } from "src/interfaces/IInterestRateModel.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {IOperator} from "src/interfaces/IOperator.sol";
+import {IInterestRateModel} from "src/interfaces/IInterestRateModel.sol";
 
-import { mTokenStorage } from "./mTokenStorage.sol";
+import {mTokenStorage} from "./mTokenStorage.sol";
 
 abstract contract mTokenConfiguration is mTokenStorage {
     // ----------- MODIFIERS ------------
@@ -63,10 +63,7 @@ abstract contract mTokenConfiguration is mTokenStorage {
      * @dev Admin function to accrue interest and update the interest rate model
      * @param newInterestRateModel the new interest rate model to use
      */
-    function setInterestRateModel(address newInterestRateModel)
-        external
-        onlyAdmin
-    {
+    function setInterestRateModel(address newInterestRateModel) external onlyAdmin {
         _accrueInterest();
         // emits interest-rate-model-update-specific logs on errors, so we don't need to.
         return _setInterestRateModel(newInterestRateModel);
@@ -88,16 +85,10 @@ abstract contract mTokenConfiguration is mTokenStorage {
      * @notice accrues interest and sets a new reserve factor for the protocol using _setReserveFactorFresh
      * @dev Admin function to accrue interest and set a new reserve factor
      */
-    function setReserveFactor(uint256 newReserveFactorMantissa)
-        external
-        onlyAdmin
-    {
+    function setReserveFactor(uint256 newReserveFactorMantissa) external onlyAdmin {
         _accrueInterest();
 
-        require(
-            newReserveFactorMantissa <= RESERVE_FACTOR_MAX_MANTISSA,
-            mt_ReserveFactorTooHigh()
-        );
+        require(newReserveFactorMantissa <= RESERVE_FACTOR_MAX_MANTISSA, mt_ReserveFactorTooHigh());
 
         emit NewReserveFactor(reserveFactorMantissa, newReserveFactorMantissa);
         reserveFactorMantissa = newReserveFactorMantissa;
@@ -108,10 +99,7 @@ abstract contract mTokenConfiguration is mTokenStorage {
      * @dev Admin function to begin change of admin. The newPendingAdmin must call `_acceptAdmin` to finalize the transfer.
      * @param newPendingAdmin New pending admin.
      */
-    function setPendingAdmin(address payable newPendingAdmin)
-        external
-        onlyAdmin
-    {
+    function setPendingAdmin(address payable newPendingAdmin) external onlyAdmin {
         pendingAdmin = newPendingAdmin;
     }
 
@@ -138,10 +126,7 @@ abstract contract mTokenConfiguration is mTokenStorage {
      */
     function _setInterestRateModel(address newInterestRateModel) internal {
         // Ensure invoke newInterestRateModel.isInterestRateModel() returns true
-        require(
-            IInterestRateModel(newInterestRateModel).isInterestRateModel(),
-            mt_MarketMethodNotValid()
-        );
+        require(IInterestRateModel(newInterestRateModel).isInterestRateModel(), mt_MarketMethodNotValid());
 
         emit NewMarketInterestRateModel(interestRateModel, newInterestRateModel);
         interestRateModel = newInterestRateModel;

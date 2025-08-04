@@ -12,10 +12,10 @@
 // SPDX-License-Identifier: BSL-1.1
 pragma solidity =0.8.28;
 
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { ImTokenMinimal } from "src/interfaces/ImToken.sol";
-import { IOracleOperator } from "src/interfaces/IOracleOperator.sol";
-import { IDefaultAdapter } from "src/interfaces/IDefaultAdapter.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {ImTokenMinimal} from "src/interfaces/ImToken.sol";
+import {IOracleOperator} from "src/interfaces/IOracleOperator.sol";
+import {IDefaultAdapter} from "src/interfaces/IDefaultAdapter.sol";
 
 contract MixedPriceOracleV4 is IOracleOperator {
     uint256 public immutable STALENESS_PERIOD;
@@ -49,16 +49,9 @@ contract MixedPriceOracleV4 is IOracleOperator {
     event ConfigSet(string symbol, PriceConfig config);
     event StalenessUpdated(string symbol, uint256 val);
     event PriceDeltaUpdated(uint256 oldVal, uint256 newVal);
-    event PriceSymbolDeltaUpdated(
-        uint256 oldVal, uint256 newVal, string symbol
-    );
+    event PriceSymbolDeltaUpdated(uint256 oldVal, uint256 newVal, string symbol);
 
-    constructor(
-        string[] memory symbols_,
-        PriceConfig[] memory configs_,
-        address roles_,
-        uint256 stalenessPeriod_
-    ) {
+    constructor(string[] memory symbols_, PriceConfig[] memory configs_, address roles_, uint256 stalenessPeriod_) {
         roles = IRoles(roles_);
         for (uint256 i = 0; i < symbols_.length; i++) {
             configs[symbols_[i]] = configs_[i];
@@ -74,12 +67,7 @@ contract MixedPriceOracleV4 is IOracleOperator {
         emit StalenessUpdated(symbol, val);
     }
 
-    function setConfig(
-        string memory symbol,
-        PriceConfig memory config
-    )
-        external
-    {
+    function setConfig(string memory symbol, PriceConfig memory config) external {
         if (!roles.isAllowedFor(msg.sender, roles.GUARDIAN_ORACLE())) {
             revert MixedPriceOracle_Unauthorized();
         }
@@ -102,12 +90,7 @@ contract MixedPriceOracleV4 is IOracleOperator {
         maxPriceDelta = _delta;
     }
 
-    function setSymbolMaxPriceDelta(
-        uint256 _delta,
-        string calldata _symbol
-    )
-        external
-    {
+    function setSymbolMaxPriceDelta(uint256 _delta, string calldata _symbol) external {
         if (!roles.isAllowedFor(msg.sender, roles.GUARDIAN_ORACLE())) {
             revert MixedPriceOracle_Unauthorized();
         }
@@ -124,44 +107,27 @@ contract MixedPriceOracleV4 is IOracleOperator {
     }
 
     // price is extended for operator usage based on decimals of exchangeRate
-    function getUnderlyingPrice(address mToken)
-        external
-        view
-        override
-        returns (uint256)
-    {
+    function getUnderlyingPrice(address mToken) external view override returns (uint256) {
         // ImTokenMinimal cast is needed for `.symbol()` call. No need to import a different interface
-        string memory symbol =
-            ImTokenMinimal(ImTokenMinimal(mToken).underlying()).symbol();
+        string memory symbol = ImTokenMinimal(ImTokenMinimal(mToken).underlying()).symbol();
         PriceConfig memory config = configs[symbol];
         uint256 priceUsd = _getPriceUSD(symbol);
         return priceUsd * 10 ** (18 - config.underlyingDecimals);
     }
 
-    function _getPriceUSD(string memory symbol)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getPriceUSD(string memory symbol) internal view returns (uint256) {
         PriceConfig memory config = configs[symbol];
-        (uint256 feedPrice, uint256 feedDecimals) =
-            _getLatestPrice(symbol, config);
+        (uint256 feedPrice, uint256 feedDecimals) = _getLatestPrice(symbol, config);
         uint256 price = feedPrice * 10 ** (18 - feedDecimals);
 
-        if (
-            keccak256(abi.encodePacked(config.toSymbol))
-                != keccak256(abi.encodePacked("USD"))
-        ) {
+        if (keccak256(abi.encodePacked(config.toSymbol)) != keccak256(abi.encodePacked("USD"))) {
             price = (price * _getPriceUSD(config.toSymbol)) / 10 ** 18;
         }
 
         return price;
     }
 
-    function _getLatestPrice(
-        string memory symbol,
-        PriceConfig memory config
-    )
+    function _getLatestPrice(string memory symbol, PriceConfig memory config)
         internal
         view
         returns (uint256, uint256)
@@ -171,10 +137,8 @@ contract MixedPriceOracleV4 is IOracleOperator {
         }
 
         //get both prices
-        (, int256 apiV3Price,, uint256 apiV3UpdatedAt,) =
-            IDefaultAdapter(config.api3Feed).latestRoundData();
-        (, int256 eOraclePrice,, uint256 eOracleUpdatedAt,) =
-            IDefaultAdapter(config.eOracleFeed).latestRoundData();
+        (, int256 apiV3Price,, uint256 apiV3UpdatedAt,) = IDefaultAdapter(config.api3Feed).latestRoundData();
+        (, int256 eOraclePrice,, uint256 eOracleUpdatedAt,) = IDefaultAdapter(config.eOracleFeed).latestRoundData();
 
         // check if ApiV3 price is up to date
         uint256 _staleness = _getStaleness(symbol);
@@ -182,8 +146,7 @@ contract MixedPriceOracleV4 is IOracleOperator {
 
         // check delta
         uint256 delta = _absDiff(apiV3Price, eOraclePrice);
-        uint256 deltaBps = (delta * PRICE_DELTA_EXP)
-            / uint256(eOraclePrice < 0 ? -eOraclePrice : eOraclePrice);
+        uint256 deltaBps = (delta * PRICE_DELTA_EXP) / uint256(eOraclePrice < 0 ? -eOraclePrice : eOraclePrice);
 
         uint256 deltaSymbol = deltaPerSymbol[symbol];
         if (deltaSymbol == 0) {
@@ -193,17 +156,11 @@ contract MixedPriceOracleV4 is IOracleOperator {
         uint256 decimals;
         uint256 uPrice;
         if (!apiV3Fresh || deltaBps > deltaSymbol) {
-            require(
-                block.timestamp - eOracleUpdatedAt < _staleness,
-                MixedPriceOracle_eOracleStalePrice()
-            );
+            require(block.timestamp - eOracleUpdatedAt < _staleness, MixedPriceOracle_eOracleStalePrice());
             decimals = IDefaultAdapter(config.eOracleFeed).decimals();
             uPrice = uint256(eOraclePrice);
         } else {
-            require(
-                block.timestamp - apiV3UpdatedAt < _staleness,
-                MixedPriceOracle_ApiV3StalePrice()
-            );
+            require(block.timestamp - apiV3UpdatedAt < _staleness, MixedPriceOracle_ApiV3StalePrice());
             decimals = IDefaultAdapter(config.api3Feed).decimals();
             uPrice = uint256(apiV3Price);
         }
@@ -215,11 +172,7 @@ contract MixedPriceOracleV4 is IOracleOperator {
         return uint256(a >= b ? a - b : b - a);
     }
 
-    function _getStaleness(string memory symbol)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getStaleness(string memory symbol) internal view returns (uint256) {
         uint256 _registered = stalenessPerSymbol[symbol];
         return _registered > 0 ? _registered : STALENESS_PERIOD;
     }

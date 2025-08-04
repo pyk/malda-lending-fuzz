@@ -23,7 +23,7 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { ImTokenOperationTypes } from "./ImToken.sol";
+import {ImTokenOperationTypes} from "./ImToken.sol";
 
 interface IPauser is ImTokenOperationTypes {
     enum PausableType {
@@ -60,11 +60,7 @@ interface IPauser is ImTokenOperationTypes {
      * @param _market the mToken address
      * @param _pauseType the operation type
      */
-    function emergencyPauseMarketFor(
-        address _market,
-        OperationType _pauseType
-    )
-        external;
+    function emergencyPauseMarketFor(address _market, OperationType _pauseType) external;
 
     /**
      * @notice pauses all operations for all registered markets

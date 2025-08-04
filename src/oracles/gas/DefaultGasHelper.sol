@@ -19,7 +19,7 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DefaultGasHelper is Ownable {
     // ----------- STORAGE ------------
@@ -28,7 +28,7 @@ contract DefaultGasHelper is Ownable {
     // ----------- EVENTS ------------
     event GasFeeUpdated(uint32 indexed dstChainid, uint256 amount);
 
-    constructor(address _owner) Ownable(_owner) { }
+    constructor(address _owner) Ownable(_owner) {}
 
     // ----------- OWNER ------------
     /**

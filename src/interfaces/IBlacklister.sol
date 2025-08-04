@@ -30,10 +30,7 @@ interface IBlacklister {
 
     // ----------- VIEW FUNCTIONS -----------
     /// @notice Returns the list of currently blacklisted addresses.
-    function getBlacklistedAddresses()
-        external
-        view
-        returns (address[] memory);
+    function getBlacklistedAddresses() external view returns (address[] memory);
 
     /// @notice Returns whether a user is currently blacklisted.
     function isBlacklisted(address user) external view returns (bool);

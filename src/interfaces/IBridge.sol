@@ -30,11 +30,7 @@ interface IBridge {
      * @param _message operation message data
      * @param _bridgeData specific bridge data
      */
-    function getFee(
-        uint32 _dstChainId,
-        bytes memory _message,
-        bytes memory _bridgeData
-    )
+    function getFee(uint32 _dstChainId, bytes memory _message, bytes memory _bridgeData)
         external
         view
         returns (uint256);
@@ -55,7 +51,5 @@ interface IBridge {
         address _token,
         bytes memory _message,
         bytes memory _bridgeData
-    )
-        external
-        payable;
+    ) external payable;
 }

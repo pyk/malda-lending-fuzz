@@ -34,10 +34,7 @@ interface IInterestRateModel {
     /// @param jumpMultiplierPerBlock The multiplier after hitting the kink
     /// @param kink The utilization point where the jump multiplier is applied
     event NewInterestParams(
-        uint256 baseRatePerBlock,
-        uint256 multiplierPerBlock,
-        uint256 jumpMultiplierPerBlock,
-        uint256 kink
+        uint256 baseRatePerBlock, uint256 multiplierPerBlock, uint256 jumpMultiplierPerBlock, uint256 kink
     );
 
     /**
@@ -88,14 +85,7 @@ interface IInterestRateModel {
      * @param reserves The total reserves in the market
      * @return The utilization rate as a mantissa between [0, 1e18]
      */
-    function utilizationRate(
-        uint256 cash,
-        uint256 borrows,
-        uint256 reserves
-    )
-        external
-        pure
-        returns (uint256);
+    function utilizationRate(uint256 cash, uint256 borrows, uint256 reserves) external pure returns (uint256);
 
     /**
      * @notice Returns the current borrow rate per block for the market
@@ -104,14 +94,7 @@ interface IInterestRateModel {
      * @param reserves The total reserves in the market
      * @return The current borrow rate per block, scaled by 1e18
      */
-    function getBorrowRate(
-        uint256 cash,
-        uint256 borrows,
-        uint256 reserves
-    )
-        external
-        view
-        returns (uint256);
+    function getBorrowRate(uint256 cash, uint256 borrows, uint256 reserves) external view returns (uint256);
 
     /**
      * @notice Returns the current supply rate per block for the market
@@ -121,12 +104,7 @@ interface IInterestRateModel {
      * @param reserveFactorMantissa The current reserve factor for the market
      * @return The current supply rate per block, scaled by 1e18
      */
-    function getSupplyRate(
-        uint256 cash,
-        uint256 borrows,
-        uint256 reserves,
-        uint256 reserveFactorMantissa
-    )
+    function getSupplyRate(uint256 cash, uint256 borrows, uint256 reserves, uint256 reserveFactorMantissa)
         external
         view
         returns (uint256);

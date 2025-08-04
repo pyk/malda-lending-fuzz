@@ -24,12 +24,12 @@ pragma solidity =0.8.28;
 */
 
 // interfaces
-import { IRoles } from "src/interfaces/IRoles.sol";
-import { ImToken, ImTokenMinimal } from "src/interfaces/ImToken.sol";
-import { IInterestRateModel } from "src/interfaces/IInterestRateModel.sol";
+import {IRoles} from "src/interfaces/IRoles.sol";
+import {ImToken, ImTokenMinimal} from "src/interfaces/ImToken.sol";
+import {IInterestRateModel} from "src/interfaces/IInterestRateModel.sol";
 
 // contracts
-import { ExponentialNoError } from "src/utils/ExponentialNoError.sol";
+import {ExponentialNoError} from "src/utils/ExponentialNoError.sol";
 
 abstract contract mTokenStorage is ImToken, ExponentialNoError {
     // ----------- ACCESS STORAGE ------------
@@ -189,47 +189,28 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
     /**
      * @notice EIP20 Approval event
      */
-    event Approval(
-        address indexed owner, address indexed spender, uint256 amount
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 amount);
 
     // ----------- MARKETS EVENTS ------------
     /**
      * @notice Event emitted when interest is accrued
      */
-    event AccrueInterest(
-        uint256 cashPrior,
-        uint256 interestAccumulated,
-        uint256 borrowIndex,
-        uint256 totalBorrows
-    );
+    event AccrueInterest(uint256 cashPrior, uint256 interestAccumulated, uint256 borrowIndex, uint256 totalBorrows);
 
     /**
      * @notice Event emitted when tokens are minted
      */
-    event Mint(
-        address indexed minter,
-        address indexed receiver,
-        uint256 mintAmount,
-        uint256 mintTokens
-    );
+    event Mint(address indexed minter, address indexed receiver, uint256 mintAmount, uint256 mintTokens);
 
     /**
      * @notice Event emitted when tokens are redeemed
      */
-    event Redeem(
-        address indexed redeemer, uint256 redeemAmount, uint256 redeemTokens
-    );
+    event Redeem(address indexed redeemer, uint256 redeemAmount, uint256 redeemTokens);
 
     /**
      * @notice Event emitted when underlying is borrowed
      */
-    event Borrow(
-        address indexed borrower,
-        uint256 borrowAmount,
-        uint256 accountBorrows,
-        uint256 totalBorrows
-    );
+    event Borrow(address indexed borrower, uint256 borrowAmount, uint256 accountBorrows, uint256 totalBorrows);
 
     /**
      * @notice Event emitted when a borrow is repaid
@@ -256,31 +237,22 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
     /**
      * @notice Event emitted when interestRateModel is changed
      */
-    event NewMarketInterestRateModel(
-        address indexed oldInterestRateModel,
-        address indexed newInterestRateModel
-    );
+    event NewMarketInterestRateModel(address indexed oldInterestRateModel, address indexed newInterestRateModel);
 
     /**
      * @notice Event emitted when the reserve factor is changed
      */
-    event NewReserveFactor(
-        uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa
-    );
+    event NewReserveFactor(uint256 oldReserveFactorMantissa, uint256 newReserveFactorMantissa);
 
     /**
      * @notice Event emitted when the reserves are added
      */
-    event ReservesAdded(
-        address indexed benefactor, uint256 addAmount, uint256 newTotalReserves
-    );
+    event ReservesAdded(address indexed benefactor, uint256 addAmount, uint256 newTotalReserves);
 
     /**
      * @notice Event emitted when the reserves are reduced
      */
-    event ReservesReduced(
-        address indexed admin, uint256 reduceAmount, uint256 newTotalReserves
-    );
+    event ReservesReduced(address indexed admin, uint256 reduceAmount, uint256 newTotalReserves);
 
     /**
      * @notice Event emitted when the borrow max mantissa is updated
@@ -290,16 +262,12 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
     /**
      * @notice Event emitted when same chain flow state is enabled or disabled
      */
-    event SameChainFlowStateUpdated(
-        address indexed sender, bool _oldState, bool _newState
-    );
+    event SameChainFlowStateUpdated(address indexed sender, bool _oldState, bool _newState);
 
     /**
      * @notice Event emitted when same chain flow state is enabled or disabled
      */
-    event ZkVerifierUpdated(
-        address indexed oldVerifier, address indexed newVerifier
-    );
+    event ZkVerifierUpdated(address indexed oldVerifier, address indexed newVerifier);
 
     // ----------- VIRTUAL ------------
     /**
@@ -338,10 +306,8 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
              *  exchangeRate = (totalCash + totalBorrows - totalReserves) / totalSupply
              */
             uint256 totalCash = _getCashPrior();
-            uint256 cashPlusBorrowsMinusReserves =
-                totalCash + totalBorrows - totalReserves;
-            uint256 exchangeRate =
-                (cashPlusBorrowsMinusReserves * expScale) / _totalSupply;
+            uint256 cashPlusBorrowsMinusReserves = totalCash + totalBorrows - totalReserves;
+            uint256 exchangeRate = (cashPlusBorrowsMinusReserves * expScale) / _totalSupply;
 
             return exchangeRate;
         }
@@ -358,25 +324,14 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
      * @dev Performs a transfer in, reverting upon failure. Returns the amount actually transferred to the protocol, in case of a fee.
      *  This may revert due to insufficient balance or insufficient allowance.
      */
-    function _doTransferIn(
-        address from,
-        uint256 amount
-    )
-        internal
-        virtual
-        returns (uint256);
+    function _doTransferIn(address from, uint256 amount) internal virtual returns (uint256);
 
     /**
      * @dev Performs a transfer out, ideally returning an explanatory error code upon failure rather than reverting.
      *  If caller has not called checked protocol's balance, may revert due to insufficient cash held in the contract.
      *  If caller has checked protocol's balance, and verified it is >= amount, this should not revert in normal conditions.
      */
-    function _doTransferOut(
-        address payable to,
-        uint256 amount
-    )
-        internal
-        virtual;
+    function _doTransferOut(address payable to, uint256 amount) internal virtual;
 
     // ----------- NON-VIRTUAL ------------
     function _accrueInterest() internal {
@@ -396,13 +351,10 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
         uint256 borrowIndexPrior = borrowIndex;
 
         /* Calculate the current borrow interest rate */
-        uint256 borrowRateMantissa = IInterestRateModel(interestRateModel)
-            .getBorrowRate(cashPrior, borrowsPrior, reservesPrior);
+        uint256 borrowRateMantissa =
+            IInterestRateModel(interestRateModel).getBorrowRate(cashPrior, borrowsPrior, reservesPrior);
         if (borrowRateMaxMantissa > 0) {
-            require(
-                borrowRateMantissa <= borrowRateMaxMantissa,
-                mt_BorrowRateTooHigh()
-            );
+            require(borrowRateMantissa <= borrowRateMaxMantissa, mt_BorrowRateTooHigh());
         }
 
         /* Calculate the number of blocks elapsed since the last accrual */
@@ -417,19 +369,12 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
          *  borrowIndexNew = simpleInterestFactor * borrowIndex + borrowIndex
          */
 
-        Exp memory simpleInterestFactor =
-            mul_(Exp({ mantissa: borrowRateMantissa }), blockDelta);
-        uint256 interestAccumulated =
-            mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
+        Exp memory simpleInterestFactor = mul_(Exp({mantissa: borrowRateMantissa}), blockDelta);
+        uint256 interestAccumulated = mul_ScalarTruncate(simpleInterestFactor, borrowsPrior);
         uint256 totalBorrowsNew = interestAccumulated + borrowsPrior;
-        uint256 totalReservesNew = mul_ScalarTruncateAddUInt(
-            Exp({ mantissa: reserveFactorMantissa }),
-            interestAccumulated,
-            reservesPrior
-        );
-        uint256 borrowIndexNew = mul_ScalarTruncateAddUInt(
-            simpleInterestFactor, borrowIndexPrior, borrowIndexPrior
-        );
+        uint256 totalReservesNew =
+            mul_ScalarTruncateAddUInt(Exp({mantissa: reserveFactorMantissa}), interestAccumulated, reservesPrior);
+        uint256 borrowIndexNew = mul_ScalarTruncateAddUInt(simpleInterestFactor, borrowIndexPrior, borrowIndexPrior);
 
         /////////////////////////
         // EFFECTS & INTERACTIONS
@@ -442,8 +387,6 @@ abstract contract mTokenStorage is ImToken, ExponentialNoError {
         totalReserves = totalReservesNew;
 
         /* We emit an AccrueInterest event */
-        emit AccrueInterest(
-            cashPrior, interestAccumulated, borrowIndexNew, totalBorrowsNew
-        );
+        emit AccrueInterest(cashPrior, interestAccumulated, borrowIndexNew, totalBorrowsNew);
     }
 }

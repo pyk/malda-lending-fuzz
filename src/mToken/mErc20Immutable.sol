@@ -23,7 +23,7 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { mErc20 } from "./mErc20.sol";
+import {mErc20} from "./mErc20.sol";
 
 contract mErc20Immutable is mErc20 {
     /**
@@ -51,13 +51,7 @@ contract mErc20Immutable is mErc20 {
 
         // Initialize the market
         _initializeMErc20(
-            underlying_,
-            operator_,
-            interestRateModel_,
-            initialExchangeRateMantissa_,
-            name_,
-            symbol_,
-            decimals_
+            underlying_, operator_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_
         );
 
         // Set the proper admin now that initialization is done

@@ -19,17 +19,16 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { SafeERC20 } from
-    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { SafeApprove } from "src/libraries/SafeApprove.sol";
-import { BytesLib } from "src/libraries/BytesLib.sol";
+import {SafeApprove} from "src/libraries/SafeApprove.sol";
+import {BytesLib} from "src/libraries/BytesLib.sol";
 
-import { IBridge } from "src/interfaces/IBridge.sol";
-import { IFeeAdapter } from "src/interfaces/external/everclear/IFeeAdapter.sol";
+import {IBridge} from "src/interfaces/IBridge.sol";
+import {IFeeAdapter} from "src/interfaces/external/everclear/IFeeAdapter.sol";
 
-import { BaseBridge } from "src/rebalancer/bridges/BaseBridge.sol";
+import {BaseBridge} from "src/rebalancer/bridges/BaseBridge.sol";
 
 contract EverclearBridge is BaseBridge, IBridge {
     using SafeERC20 for IERC20;
@@ -51,15 +50,8 @@ contract EverclearBridge is BaseBridge, IBridge {
     }
 
     // ----------- EVENTS ------------
-    event MsgSent(
-        uint256 indexed dstChainId,
-        address indexed market,
-        uint256 amountLD,
-        bytes32 id
-    );
-    event RebalancingReturnedToMarket(
-        address indexed market, uint256 toReturn, uint256 extracted
-    );
+    event MsgSent(uint256 indexed dstChainId, address indexed market, uint256 amountLD, bytes32 id);
+    event RebalancingReturnedToMarket(address indexed market, uint256 toReturn, uint256 extracted);
 
     // ----------- ERRORS ------------
     error Everclear_TokenMismatch();
@@ -78,15 +70,7 @@ contract EverclearBridge is BaseBridge, IBridge {
     /**
      * @inheritdoc IBridge
      */
-    function getFee(
-        uint32,
-        bytes memory,
-        bytes memory
-    )
-        external
-        pure
-        returns (uint256)
-    {
+    function getFee(uint32, bytes memory, bytes memory) external pure returns (uint256) {
         // need to use Everclear API
         revert Everclear_NotImplemented();
     }
@@ -99,11 +83,7 @@ contract EverclearBridge is BaseBridge, IBridge {
         address _token,
         bytes memory _message,
         bytes memory // unused
-    )
-        external
-        payable
-        onlyRebalancer
-    {
+    ) external payable onlyRebalancer {
         IntentParams memory params = _decodeIntent(_message);
 
         require(params.inputAsset == _token, Everclear_TokenMismatch());
@@ -124,14 +104,10 @@ contract EverclearBridge is BaseBridge, IBridge {
         if (_extractedAmount > params.amount) {
             uint256 toReturn = _extractedAmount - params.amount;
             IERC20(_token).safeTransfer(_market, toReturn);
-            emit RebalancingReturnedToMarket(
-                _market, toReturn, _extractedAmount
-            );
+            emit RebalancingReturnedToMarket(_market, toReturn, _extractedAmount);
         }
 
-        SafeApprove.safeApprove(
-            params.inputAsset, address(everclearFeeAdapter), params.amount
-        );
+        SafeApprove.safeApprove(params.inputAsset, address(everclearFeeAdapter), params.amount);
         (bytes32 id,) = everclearFeeAdapter.newIntent(
             params.destinations,
             params.receiver,
@@ -147,11 +123,7 @@ contract EverclearBridge is BaseBridge, IBridge {
     }
 
     // ----------- INTERNAL ------------
-    function _decodeIntent(bytes memory message)
-        internal
-        pure
-        returns (IntentParams memory)
-    {
+    function _decodeIntent(bytes memory message) internal pure returns (IntentParams memory) {
         // message contains data obtained from `https://api.everclear.org/intents` call
         // data can be decoded into `FeeAdapter.newIntent` call params
 
@@ -168,30 +140,9 @@ contract EverclearBridge is BaseBridge, IBridge {
             bytes memory data,
             IFeeAdapter.FeeParams memory feeParams
         ) = abi.decode(
-            intentData,
-            (
-                uint32[],
-                bytes32,
-                address,
-                bytes32,
-                uint256,
-                uint24,
-                uint48,
-                bytes,
-                IFeeAdapter.FeeParams
-            )
+            intentData, (uint32[], bytes32, address, bytes32, uint256, uint24, uint48, bytes, IFeeAdapter.FeeParams)
         );
 
-        return IntentParams(
-            destinations,
-            receiver,
-            inputAsset,
-            outputAsset,
-            amount,
-            maxFee,
-            ttl,
-            data,
-            feeParams
-        );
+        return IntentParams(destinations, receiver, inputAsset, outputAsset, amount, maxFee, ttl, data, feeParams);
     }
 }

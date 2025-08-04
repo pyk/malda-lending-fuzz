@@ -39,23 +39,13 @@ interface IRebalancer {
 
     event BridgeWhitelistedStatusUpdated(address indexed bridge, bool status);
     event MsgSent(
-        address indexed bridge,
-        uint32 indexed dstChainId,
-        address indexed token,
-        bytes message,
-        bytes bridgeData
+        address indexed bridge, uint32 indexed dstChainId, address indexed token, bytes message, bytes bridgeData
     );
 
     event EthSaved(uint256 amount);
-    event MaxTransferSizeUpdated(
-        uint32 indexed dstChainId, address indexed token, uint256 newLimit
-    );
-    event MinTransferSizeUpdated(
-        uint32 indexed dstChainId, address indexed token, uint256 newLimit
-    );
-    event DestinationWhitelistedStatusUpdated(
-        uint32 indexed dstChainId, bool status
-    );
+    event MaxTransferSizeUpdated(uint32 indexed dstChainId, address indexed token, uint256 newLimit);
+    event MinTransferSizeUpdated(uint32 indexed dstChainId, address indexed token, uint256 newLimit);
+    event DestinationWhitelistedStatusUpdated(uint32 indexed dstChainId, bool status);
     event AllowedListUpdated(address[] list, bool status);
 
     // ----------- ERRORS ------------
@@ -82,10 +72,7 @@ interface IRebalancer {
     /**
      * @notice returns if a destination is whitelisted
      */
-    function isDestinationWhitelisted(uint32 dstId)
-        external
-        view
-        returns (bool);
+    function isDestinationWhitelisted(uint32 dstId) external view returns (bool);
 
     // ----------- EXTERNAL METHODS ------------
     /**
@@ -95,12 +82,5 @@ interface IRebalancer {
      * @param _amount the amount to rebalance
      * @param msg the message data
      */
-    function sendMsg(
-        address bridge,
-        address _market,
-        uint256 _amount,
-        Msg calldata msg
-    )
-        external
-        payable;
+    function sendMsg(address bridge, address _market, uint256 _amount, Msg calldata msg) external payable;
 }
