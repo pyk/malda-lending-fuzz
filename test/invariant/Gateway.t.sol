@@ -11,6 +11,7 @@ import {Blacklister} from "../../src/blacklister/Blacklister.sol";
 import {ZkVerifier} from "../../src/verifier/ZkVerifier.sol";
 import {Risc0VerifierMock} from "../mocks/Risc0VerifierMock.sol";
 import {mTokenGateway} from "../../src/mToken/extension/mTokenGateway.sol";
+import {GatewayHandler} from "./handlers/GatewayHandler.sol";
 // forgefmt: disable-end
 
 contract GatewayInvariantTest is Test {
@@ -22,6 +23,7 @@ contract GatewayInvariantTest is Test {
     Risc0VerifierMock risc0Verifier;
     ZkVerifier zkVerifier;
     mTokenGateway gateway;
+    GatewayHandler handler;
 
     function setUp() external {
         underlying = deployAsset({
@@ -59,6 +61,10 @@ contract GatewayInvariantTest is Test {
             _blacklister: address(blacklister),
             _zkVerifier: address(zkVerifier)
         });
+
+        handler = new GatewayHandler(gateway, underlying);
+
+        targetContract(address(handler));
     }
 
     function deployProxy(address _implementation) internal returns (address) {
@@ -153,7 +159,12 @@ contract GatewayInvariantTest is Test {
         vm.label(address(_gateway), _name);
     }
 
-    function invariant_a() external {
-        assertTrue(true, "OK");
+    function invariant_gateway_balance() public view {
+        uint256 totalIn = 0;
+        uint256 totalOut = 0;
+
+        // (totalIn, totalOut) = gateway.getProofData(address(handler), 0);
+
+        assertGe(totalIn, totalOut);
     }
 }

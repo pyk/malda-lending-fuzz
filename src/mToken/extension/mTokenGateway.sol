@@ -24,8 +24,10 @@ pragma solidity =0.8.28;
 */
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {SafeERC20} from
+    "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {OwnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 // contracts
 import {IRoles} from "src/interfaces/IRoles.sol";
@@ -37,7 +39,11 @@ import {mTokenProofDecoderLib} from "src/libraries/mTokenProofDecoderLib.sol";
 
 import {IZkVerifier} from "src/verifier/ZkVerifier.sol";
 
-contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTypes {
+contract mTokenGateway is
+    OwnableUpgradeable,
+    ImTokenGateway,
+    ImTokenOperationTypes
+{
     using SafeERC20 for IERC20;
 
     // ----------- STORAGE -----------
@@ -82,7 +88,10 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
         address _roles,
         address _blacklister,
         address zkVerifier_
-    ) external initializer {
+    )
+        external
+        initializer
+    {
         __Ownable_init(_owner);
         require(_roles != address(0), mTokenGateway_AddressNotValid());
         require(zkVerifier_ != address(0), mTokenGateway_AddressNotValid());
@@ -110,7 +119,10 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     }
 
     modifier ifNotBlacklisted(address user) {
-        require(!blacklistOperator.isBlacklisted(user), mTokenGateway_UserBlacklisted());
+        require(
+            !blacklistOperator.isBlacklisted(user),
+            mTokenGateway_UserBlacklisted()
+        );
         _;
     }
 
@@ -125,7 +137,14 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     /**
      * @inheritdoc ImTokenGateway
      */
-    function getProofData(address user, uint32) external view returns (uint256, uint256) {
+    function getProofData(
+        address user,
+        uint32
+    )
+        external
+        view
+        returns (uint256, uint256)
+    {
         return (accAmountIn[user], accAmountOut[user]);
     }
 
@@ -162,7 +181,10 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     function setPaused(OperationType _type, bool state) external override {
         if (state) {
             require(
-                msg.sender == owner() || rolesOperator.isAllowedFor(msg.sender, rolesOperator.GUARDIAN_PAUSE()),
+                msg.sender == owner()
+                    || rolesOperator.isAllowedFor(
+                        msg.sender, rolesOperator.GUARDIAN_PAUSE()
+                    ),
                 mTokenGateway_CallerNotAllowed()
             );
         } else {
@@ -176,8 +198,12 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     /**
      * @inheritdoc ImTokenGateway
      */
-    function extractForRebalancing(uint256 amount) external notPaused(OperationType.Rebalancing) {
-        if (!rolesOperator.isAllowedFor(msg.sender, rolesOperator.REBALANCER())) {
+    function extractForRebalancing(uint256 amount)
+        external
+        notPaused(OperationType.Rebalancing)
+    {
+        if (!rolesOperator.isAllowedFor(msg.sender, rolesOperator.REBALANCER()))
+        {
             revert mTokenGateway_NotRebalancer();
         }
         IERC20(underlying).safeTransfer(msg.sender, amount);
@@ -197,7 +223,10 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
      * @param receiver the receiver address
      */
     function withdrawGasFees(address payable receiver) external {
-        if (msg.sender != owner() && !_isAllowedFor(msg.sender, _getSequencerRole())) {
+        if (
+            msg.sender != owner()
+                && !_isAllowedFor(msg.sender, _getSequencerRole())
+        ) {
             revert mTokenGateway_CallerNotAllowed();
         }
         uint256 balance = address(this).balance;
@@ -218,7 +247,13 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     /**
      * @inheritdoc ImTokenGateway
      */
-    function updateAllowedCallerStatus(address caller, bool status) external override {
+    function updateAllowedCallerStatus(
+        address caller,
+        bool status
+    )
+        external
+        override
+    {
         allowedCallers[msg.sender][caller] = status;
         emit AllowedCallerUpdated(msg.sender, caller, status);
     }
@@ -226,7 +261,11 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     /**
      * @inheritdoc ImTokenGateway
      */
-    function supplyOnHost(uint256 amount, address receiver, bytes4 lineaSelector)
+    function supplyOnHost(
+        uint256 amount,
+        address receiver,
+        bytes4 lineaSelector
+    )
         external
         payable
         override
@@ -259,14 +298,23 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     /**
      * @inheritdoc ImTokenGateway
      */
-    function outHere(bytes calldata journalData, bytes calldata seal, uint256[] calldata amounts, address receiver)
+    function outHere(
+        bytes calldata journalData,
+        bytes calldata seal,
+        uint256[] calldata amounts,
+        address receiver
+    )
         external
         notPaused(OperationType.AmountOutHere)
         ifNotBlacklisted(msg.sender)
         ifNotBlacklisted(receiver)
     {
         // verify received data
-        if (!rolesOperator.isAllowedFor(msg.sender, rolesOperator.PROOF_BATCH_FORWARDER())) {
+        if (
+            !rolesOperator.isAllowedFor(
+                msg.sender, rolesOperator.PROOF_BATCH_FORWARDER()
+            )
+        ) {
             _verifyProof(journalData, seal);
         }
 
@@ -283,9 +331,21 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
         }
     }
 
-    function _outHere(bytes memory journalData, uint256 amount, address receiver) internal {
-        (address _sender, address _market,, uint256 _accAmountOut, uint32 _chainId, uint32 _dstChainId,) =
-            mTokenProofDecoderLib.decodeJournal(journalData);
+    function _outHere(
+        bytes memory journalData,
+        uint256 amount,
+        address receiver
+    )
+        internal
+    {
+        (
+            address _sender,
+            address _market,
+            ,
+            uint256 _accAmountOut,
+            uint32 _chainId,
+            uint32 _dstChainId,
+        ) = mTokenProofDecoderLib.decodeJournal(journalData);
 
         // temporary overwrite; will be removed in future implementations
         receiver = _sender;
@@ -294,10 +354,18 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
         _checkSender(msg.sender, _sender);
         require(_market == address(this), mTokenGateway_AddressNotValid());
         require(_chainId == LINEA_CHAIN_ID, mTokenGateway_ChainNotValid()); // allow only Host
-        require(_dstChainId == uint32(block.chainid), mTokenGateway_ChainNotValid());
+        require(
+            _dstChainId == uint32(block.chainid), mTokenGateway_ChainNotValid()
+        );
         require(amount > 0, mTokenGateway_AmountNotValid());
-        require(_accAmountOut - accAmountOut[_sender] >= amount, mTokenGateway_AmountTooBig());
-        require(IERC20(underlying).balanceOf(address(this)) >= amount, mTokenGateway_ReleaseCashNotAvailable());
+        require(
+            _accAmountOut - accAmountOut[_sender] >= amount,
+            mTokenGateway_AmountTooBig()
+        );
+        require(
+            IERC20(underlying).balanceOf(address(this)) >= amount,
+            mTokenGateway_ReleaseCashNotAvailable()
+        );
 
         // effects
         accAmountOut[_sender] += amount;
@@ -318,7 +386,13 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
     }
 
     // ----------- PRIVATE ------------
-    function _verifyProof(bytes calldata journalData, bytes calldata seal) private view {
+    function _verifyProof(
+        bytes calldata journalData,
+        bytes calldata seal
+    )
+        private
+        view
+    {
         require(journalData.length > 0, mTokenGateway_JournalNotValid());
 
         // Decode the dynamic array of journals.
@@ -330,7 +404,8 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
 
         if (!isSequencer) {
             for (uint256 i = 0; i < journals.length; i++) {
-                (,,,,,, bool L1Inclusion) = mTokenProofDecoderLib.decodeJournal(journals[i]);
+                (,,,,,, bool L1Inclusion) =
+                    mTokenProofDecoderLib.decodeJournal(journals[i]);
                 if (!L1Inclusion) {
                     revert mTokenGateway_L1InclusionRequired();
                 }
@@ -364,7 +439,14 @@ contract mTokenGateway is OwnableUpgradeable, ImTokenGateway, ImTokenOperationTy
         return rolesOperator.PROOF_FORWARDER();
     }
 
-    function _isAllowedFor(address _sender, bytes32 role) private view returns (bool) {
+    function _isAllowedFor(
+        address _sender,
+        bytes32 role
+    )
+        private
+        view
+        returns (bool)
+    {
         return rolesOperator.isAllowedFor(_sender, role);
     }
 }
