@@ -186,4 +186,9 @@ contract GatewayInvariantTest is Test {
             );
         }
     }
+
+    function test_withdrawGasFees_access_control() external {
+        vm.expectRevert();
+        gateway.withdrawGasFees(payable(address(this)));
+    }
 }

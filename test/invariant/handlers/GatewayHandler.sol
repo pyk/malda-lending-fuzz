@@ -12,6 +12,7 @@ contract GatewayHandler is Handler {
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     address carol = makeAddr("carol");
+    address owner;
 
     mTokenGateway gateway;
     AssetMock underlying;
@@ -32,6 +33,7 @@ contract GatewayHandler is Handler {
         gateway = _gateway;
         underlying = _underlying;
         gasFee = gateway.gasFee();
+        owner = gateway.owner();
 
         actors = new address[](3);
         actors[0] = alice;
@@ -56,5 +58,10 @@ contract GatewayHandler is Handler {
         gateway.supplyOnHost{value: gasFee}(amount, receiver, "");
 
         accAmountIn[receiver] += amount;
+    }
+
+    function withdrawGasFees() external {
+        vm.prank(owner);
+        gateway.withdrawGasFees(payable(owner));
     }
 }
