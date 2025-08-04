@@ -1,67 +1,97 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {mTokenGateway} from "src/mToken/extension/mTokenGateway.sol";
-import {AssetMock} from "test/mocks/AssetMock.sol";
+import {Test} from "forge-std/Test.sol";
+import {IGatewayContext, Gateway} from "../IGatewayContext.sol";
 
-import {Handler} from "./Handler.sol";
+contract GatewayHandler is Test {
+    IGatewayContext context;
 
-contract GatewayHandler is Handler {
-    uint256 gasFee;
+    mapping(address mtoken => mapping(address user => uint256)) internal
+        accAmountIn;
+    mapping(address mtoken => mapping(address user => uint256)) internal
+        accAmountOut;
 
-    address alice = makeAddr("alice");
-    address bob = makeAddr("bob");
-    address carol = makeAddr("carol");
-    address owner;
+    constructor(address _context) {
+        context = IGatewayContext(_context);
+    }
 
-    mTokenGateway gateway;
-    AssetMock underlying;
+    function increaseAmountIn(
+        address _mtoken,
+        address _user,
+        uint256 _amount
+    )
+        internal
+    {
+        accAmountIn[_mtoken][_user] += _amount;
+    }
 
-    mapping(address => uint256) public accAmountIn;
-    mapping(address => uint256) public accAmountOut;
-
-    function getAmounts(address actor)
+    function getAmounts(
+        address _mtoken,
+        address _actor
+    )
         external
         view
         returns (uint256 amountIn, uint256 amountOut)
     {
-        amountIn = accAmountIn[actor];
-        amountOut = accAmountOut[actor];
+        amountIn = accAmountIn[_mtoken][_actor];
+        amountOut = accAmountOut[_mtoken][_actor];
     }
 
-    constructor(mTokenGateway _gateway, AssetMock _underlying) {
-        gateway = _gateway;
-        underlying = _underlying;
-        gasFee = gateway.gasFee();
-        owner = gateway.owner();
-
-        actors = new address[](3);
-        actors[0] = alice;
-        actors[1] = bob;
-        actors[2] = carol;
+    struct SupplyOnHostFuzz {
+        uint256 gatewayId;
+        uint256 userId;
+        uint256 amount;
+        uint256 receiverId;
     }
 
-    function supplyOnHost(
-        uint256 actorId,
-        uint96 amount,
-        address receiver
-    )
-        external
-        useActor(actorId)
+    struct SupplyOnHostParams {
+        Gateway gateway;
+        address user;
+        uint256 amount;
+        address receiver;
+    }
+
+    function bind(SupplyOnHostFuzz memory _fuzz)
+        internal
+        view
+        returns (SupplyOnHostParams memory params)
     {
-        amount = uint96(bound(amount, 1, 1000e18));
-
-        underlying.mint(currentActor, amount);
-        underlying.approve(address(gateway), amount);
-        vm.deal(currentActor, gasFee);
-
-        gateway.supplyOnHost{value: gasFee}(amount, receiver, "");
-
-        accAmountIn[receiver] += amount;
+        params.gateway = context.getRandomGateway(_fuzz.gatewayId);
+        params.user = context.getRandomUser(_fuzz.userId);
+        params.amount = bound(_fuzz.amount, 1, params.gateway.maxSupplyAmount);
+        params.receiver = context.getRandomUser(_fuzz.receiverId);
     }
 
-    function withdrawGasFees() external {
-        vm.prank(owner);
-        gateway.withdrawGasFees(payable(owner));
+    function supplyOnHost(SupplyOnHostFuzz memory _fuzz) external {
+        SupplyOnHostParams memory params = bind(_fuzz);
+        Gateway memory gateway = params.gateway;
+
+        gateway.underlying.mint(params.user, params.amount);
+        vm.prank(params.user);
+        gateway.underlying.approve(
+            address(gateway.mtoken), //
+            params.amount
+        );
+        vm.deal(params.user, gateway.gasFee);
+
+        vm.prank(params.user);
+        try gateway.mtoken.supplyOnHost{value: gateway.gasFee}(
+            params.amount, params.receiver, ""
+        ) {
+            increaseAmountIn({
+                _mtoken: address(gateway.mtoken), //
+                _user: params.receiver,
+                _amount: params.amount
+            });
+        } catch {
+            assert(false);
+        }
+    }
+
+    function withdrawGasFees(uint256 _gatewayId) external {
+        Gateway memory gateway = context.getRandomGateway(_gatewayId);
+        vm.prank(gateway.owner);
+        gateway.mtoken.withdrawGasFees(payable(gateway.owner));
     }
 }

@@ -12,60 +12,99 @@ import {ZkVerifier} from "../../src/verifier/ZkVerifier.sol";
 import {Risc0VerifierMock} from "../mocks/Risc0VerifierMock.sol";
 import {mTokenGateway} from "../../src/mToken/extension/mTokenGateway.sol";
 import {GatewayHandler} from "./handlers/GatewayHandler.sol";
+import {IGatewayContext, Gateway} from "./IGatewayContext.sol";
 // forgefmt: disable-end
 
-contract GatewayInvariantTest is Test {
+contract GatewayInvariantTest is Test, IGatewayContext {
     address admin = makeAddr("admin");
+    address alice = makeAddr("alice");
+    address bob = makeAddr("bob");
+    address carol = makeAddr("carol");
 
-    AssetMock underlying;
+    address[] users;
+
     Roles roles;
     Blacklister blacklister;
     Risc0VerifierMock risc0Verifier;
     ZkVerifier zkVerifier;
-    mTokenGateway gateway;
     GatewayHandler handler;
 
+    Gateway[3] gateways;
+
     function setUp() external {
-        underlying = deployAsset({
-            _name: "Wrapped ETH", //
-            _symbol: "WETH",
-            _decimals: 18
-        });
+        setupUsers();
 
         roles = deployRoles({
-            _name: "EthereumRoles", //
+            _name: "Roles", //
             _admin: admin
         });
 
         blacklister = deployBlacklister({
-            _name: "EthereumBlacklister",
+            _name: "Blacklister",
             _admin: admin,
             _roles: address(roles)
         });
 
         risc0Verifier = deployRisc0VerifierMock({
-            _name: "EthereumRisc0VerifierMock" //
+            _name: "Risc0VerifierMock" //
         });
 
         zkVerifier = deployZkVerifier({
-            _name: "EthereumZkVerifier",
+            _name: "ZkVerifier",
             _admin: admin,
             _verifier: address(risc0Verifier)
         });
 
-        gateway = deployGateway({
-            _name: "WETHGateway", //
+        gateways[0] = deployGateway({
+            _name: "WETH", //
+            _decimals: 18,
             _admin: admin,
-            _underlying: address(underlying),
             _roles: address(roles),
             _blacklister: address(blacklister),
-            _zkVerifier: address(zkVerifier)
+            _zkVerifier: address(zkVerifier),
+            _maxSupplyAmount: 10 * 1e18
         });
-        configureGateway();
+        gateways[1] = deployGateway({
+            _name: "USDT", //
+            _decimals: 6,
+            _admin: admin,
+            _roles: address(roles),
+            _blacklister: address(blacklister),
+            _zkVerifier: address(zkVerifier),
+            _maxSupplyAmount: 1_000_000 * 1e6
+        });
+        gateways[2] = deployGateway({
+            _name: "USDC", //
+            _decimals: 6,
+            _admin: admin,
+            _roles: address(roles),
+            _blacklister: address(blacklister),
+            _zkVerifier: address(zkVerifier),
+            _maxSupplyAmount: 1_000_000 * 1e6
+        });
 
-        handler = new GatewayHandler(gateway, underlying);
+        handler = new GatewayHandler(address(this));
 
         targetContract(address(handler));
+    }
+
+    function setupUsers() internal {
+        users = new address[](3);
+        users[0] = alice;
+        users[1] = bob;
+        users[2] = carol;
+    }
+
+    function getRandomUser(uint256 _id) public view returns (address _user) {
+        _user = users[bound(_id, 0, users.length - 1)];
+    }
+
+    function getRandomGateway(uint256 _id)
+        public
+        view
+        returns (Gateway memory _gateway)
+    {
+        _gateway = gateways[bound(_id, 0, gateways.length - 1)];
     }
 
     function deployProxy(address _implementation) internal returns (address) {
@@ -138,42 +177,58 @@ contract GatewayInvariantTest is Test {
 
     function deployGateway(
         string memory _name,
+        uint8 _decimals,
         address _admin,
-        address _underlying,
         address _roles,
         address _blacklister,
-        address _zkVerifier
+        address _zkVerifier,
+        uint256 _maxSupplyAmount
     )
         internal
-        returns (mTokenGateway _gateway)
+        returns (Gateway memory _gateway)
     {
+        _gateway.gasFee = 0.01 ether;
+        _gateway.owner = _admin;
+        _gateway.maxSupplyAmount = _maxSupplyAmount;
+
+        AssetMock underlying = deployAsset({
+            _name: _name, //
+            _symbol: _name,
+            _decimals: _decimals
+        });
         mTokenGateway implementation = new mTokenGateway();
         address proxy = deployProxy(address(implementation));
-        _gateway = mTokenGateway(proxy);
-        _gateway.initialize(
+        _gateway.mtoken = mTokenGateway(proxy);
+        _gateway.mtoken.initialize(
             payable(_admin), //
-            _underlying,
+            address(underlying),
             _roles,
             _blacklister,
             _zkVerifier
         );
-        vm.label(address(_gateway), _name);
+        _gateway.underlying = underlying;
+
+        vm.prank(_admin);
+        _gateway.mtoken.setGasFee(_gateway.gasFee);
+
+        vm.label(address(_gateway.mtoken), string.concat(_name, "Gateway"));
+        vm.label(address(underlying), _name);
     }
 
-    function configureGateway() internal {
-        vm.prank(admin);
-        gateway.setGasFee(0.01 ether);
-    }
-
-    function invariant_getProof_correct() external view {
-        address[] memory actors = handler.getActors();
-        uint256 actorCount = actors.length;
+    function assert_getProof(
+        mTokenGateway _mtoken,
+        address[] memory _users
+    )
+        internal
+        view
+    {
+        uint256 actorCount = _users.length;
         for (uint256 i = 0; i < actorCount; i++) {
-            address actor = actors[i];
+            address user = _users[i];
             (uint256 actualAmountIn, uint256 actualAmountOut) =
-                handler.getAmounts(actor);
+                handler.getAmounts(address(_mtoken), user);
             (uint256 amountIn, uint256 amountOut) =
-                gateway.getProofData(actor, 0);
+                _mtoken.getProofData(user, 0);
             assertEq(
                 actualAmountIn, //
                 amountIn,
@@ -187,8 +242,35 @@ contract GatewayInvariantTest is Test {
         }
     }
 
-    function test_withdrawGasFees_access_control() external {
+    function invariant_getProof_correct() external view {
+        uint256 gatewayCount = gateways.length;
+        for (uint256 i = 0; i < gatewayCount; i++) {
+            Gateway memory gateway = gateways[i];
+            assert_getProof({_mtoken: gateway.mtoken, _users: users});
+        }
+    }
+
+    function test_withdrawGasFees_access_control(
+        uint256 _gatewayId,
+        address _user
+    )
+        external
+    {
+        Gateway memory gateway = getRandomGateway(_gatewayId);
         vm.expectRevert();
-        gateway.withdrawGasFees(payable(address(this)));
+        vm.prank(_user);
+        gateway.mtoken.withdrawGasFees(payable(address(this)));
+    }
+
+    function test_extractForRebalancing_accress_control(
+        uint256 _gatewayId,
+        address _user
+    )
+        external
+    {
+        Gateway memory gateway = getRandomGateway(_gatewayId);
+        vm.expectRevert();
+        vm.prank(_user);
+        gateway.mtoken.extractForRebalancing(0);
     }
 }
