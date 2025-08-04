@@ -61,6 +61,7 @@ contract GatewayInvariantTest is Test {
             _blacklister: address(blacklister),
             _zkVerifier: address(zkVerifier)
         });
+        configureGateway();
 
         handler = new GatewayHandler(gateway, underlying);
 
@@ -159,13 +160,30 @@ contract GatewayInvariantTest is Test {
         vm.label(address(_gateway), _name);
     }
 
-    function invariant_gateway_balance() public view {
-        uint256 totalIn = 0;
-        uint256 totalOut = 0;
-        assertTrue(true);
+    function configureGateway() internal {
+        vm.prank(admin);
+        gateway.setGasFee(0.01 ether);
+    }
 
-        // (totalIn, totalOut) = gateway.getProofData(address(handler), 0);
-
-        // assertGe(totalIn, totalOut);
+    function invariant_getProof_correct() external view {
+        address[] memory actors = handler.getActors();
+        uint256 actorCount = actors.length;
+        for (uint256 i = 0; i < actorCount; i++) {
+            address actor = actors[i];
+            (uint256 actualAmountIn, uint256 actualAmountOut) =
+                handler.getAmounts(actor);
+            (uint256 amountIn, uint256 amountOut) =
+                gateway.getProofData(actor, 0);
+            assertEq(
+                actualAmountIn, //
+                amountIn,
+                "getProof amountIn is incorrect"
+            );
+            assertEq(
+                actualAmountOut, //
+                amountOut,
+                "getProof amountOut is incorrect"
+            );
+        }
     }
 }

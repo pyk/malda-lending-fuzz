@@ -14,4 +14,8 @@ contract Handler is Test {
         _;
         vm.stopPrank();
     }
+
+    function getActors() public view returns (address[] memory) {
+        return actors;
+    }
 }

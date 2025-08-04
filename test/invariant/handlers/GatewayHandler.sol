@@ -7,6 +7,8 @@ import {AssetMock} from "test/mocks/AssetMock.sol";
 import {Handler} from "./Handler.sol";
 
 contract GatewayHandler is Handler {
+    uint256 gasFee;
+
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     address carol = makeAddr("carol");
@@ -17,9 +19,19 @@ contract GatewayHandler is Handler {
     mapping(address => uint256) public accAmountIn;
     mapping(address => uint256) public accAmountOut;
 
+    function getAmounts(address actor)
+        external
+        view
+        returns (uint256 amountIn, uint256 amountOut)
+    {
+        amountIn = accAmountIn[actor];
+        amountOut = accAmountOut[actor];
+    }
+
     constructor(mTokenGateway _gateway, AssetMock _underlying) {
         gateway = _gateway;
         underlying = _underlying;
+        gasFee = gateway.gasFee();
 
         actors = new address[](3);
         actors[0] = alice;
@@ -39,8 +51,9 @@ contract GatewayHandler is Handler {
 
         underlying.mint(currentActor, amount);
         underlying.approve(address(gateway), amount);
+        vm.deal(currentActor, gasFee);
 
-        gateway.supplyOnHost(amount, receiver, "");
+        gateway.supplyOnHost{value: gasFee}(amount, receiver, "");
 
         accAmountIn[receiver] += amount;
     }
