@@ -2,6 +2,8 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+show_progress = true
+names = true
 
 [fmt]
 line_length = 80
