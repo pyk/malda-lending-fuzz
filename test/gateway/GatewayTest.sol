@@ -26,6 +26,10 @@ contract GatewayTest is Test {
     address bob = makeAddr("bob");
     address carol = makeAddr("carol");
 
+    function getRandomUser(uint256 id) internal view returns (address user) {
+        user = users[bound(id, 0, users.length - 1)];
+    }
+
     /// CONTRACTS
     ////////////////////////////////////////////////////////////////
 
@@ -35,6 +39,14 @@ contract GatewayTest is Test {
     ZkVerifier zkVerifier;
     mTokenGateway wethGateway;
     mTokenGateway[] gateways;
+
+    function getRandomGateway(uint256 id)
+        internal
+        view
+        returns (mTokenGateway gateway)
+    {
+        gateway = gateways[bound(id, 0, gateways.length - 1)];
+    }
 
     /// ADDITIONAL DATA
     ////////////////////////////////////////////////////////////////

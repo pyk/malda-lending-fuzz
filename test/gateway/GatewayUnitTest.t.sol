@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 // forgefmt: disable-start
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {GatewayTest, mTokenGateway} from "./GatewayTest.sol";
+import {GatewayTest} from "./GatewayTest.sol";
 // forgefmt: disable-end
 
 /// @custom:command forge test --match-contract GatewayUnitTest
