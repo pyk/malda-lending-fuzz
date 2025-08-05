@@ -7,7 +7,7 @@ secured by zkProofs.
 ## Security Properties
 
 | Contract | Property | Approach               | Result |
-| -------- | -------- | ---------------------- | ------ |
+| :------- | :------- | :--------------------- | :----- |
 | Gateway  | `G01`    | Foundry Invariant Test | PASSED |
 | Gateway  | `G02`    | Foundry Invariant Test | PASSED |
 
