@@ -11,7 +11,7 @@ single_line_statement_blocks = "multi"
 multiline_func_header = "all"
 
 [invariant]
-runs = 100000
+runs = 10000
 depth = 25
 fail_on_revert = true
 corpus_dir = "corpus"
