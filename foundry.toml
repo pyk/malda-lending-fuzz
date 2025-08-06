@@ -10,6 +10,9 @@ line_length = 80
 single_line_statement_blocks = "multi"
 multiline_func_header = "all"
 
+[fuzz]
+runs = 10000
+
 [invariant]
 runs = 10000
 depth = 25
