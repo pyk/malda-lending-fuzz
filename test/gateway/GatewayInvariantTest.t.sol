@@ -238,6 +238,7 @@ contract GatewayInvariantTest is GatewayTest {
 
     struct OutHereParams {
         mTokenGateway gateway;
+        AssetMock asset;
         address user;
         uint256 amount;
         bytes journalData;
@@ -252,6 +253,7 @@ contract GatewayInvariantTest is GatewayTest {
         returns (OutHereParams memory params)
     {
         params.gateway = getRandomGateway(fuzz.gatewayId);
+        params.asset = AssetMock(payable(params.gateway.underlying()));
         params.user = getRandomUser(fuzz.userId);
 
         uint256 currentProvenCredit = getProvenCreditOut(
@@ -285,10 +287,12 @@ contract GatewayInvariantTest is GatewayTest {
         params.amounts = amounts;
     }
 
-    function skip(OutHereParams memory params) internal view returns (bool) {
+    function skip(OutHereParams memory params) internal pure returns (bool) {
         if (params.amount == 0) {
             return true;
         }
+
+        return false;
     }
 
     function outHere(OutHereFuzz memory fuzz) external {
@@ -297,6 +301,9 @@ contract GatewayInvariantTest is GatewayTest {
         if (skip(params)) {
             return;
         }
+
+        // Assuming liquidity is enough
+        params.asset.mint(address(params.gateway), params.amount);
 
         try params.gateway.outHere({
             journalData: params.journalData,
