@@ -6,7 +6,8 @@ import {
     MaldaTest,
     Roles,
     AssetMock,
-    mTokenGateway
+    mTokenGateway,
+    mErc20Host
 } from "../MaldaTest.sol";
 // forgefmt: disable-end
 
@@ -17,7 +18,12 @@ contract CrossChainTest is MaldaTest {
     ////////////////////////////////////////////////////////////////
 
     mTokenGateway gateway;
-    AssetMock underlying;
+    AssetMock gatewayUnderlying;
+    mErc20Host market;
+    AssetMock marketUnderlying;
+
+    /// SETUP
+    ////////////////////////////////////////////////////////////////
 
     function setupCrossChainTest() internal {
         setupUsers();
@@ -26,6 +32,7 @@ contract CrossChainTest is MaldaTest {
 
     function setupContracts() private {
         setupExtensionChain();
+        setupHostChain();
     }
 
     function setupExtensionChain() private {
@@ -51,6 +58,15 @@ contract CrossChainTest is MaldaTest {
             gasFee: 0,
             maxSupplyAmount: 100 * 1e18
         });
-        underlying = AssetMock(payable(gateway.underlying()));
+        gatewayUnderlying = AssetMock(payable(gateway.underlying()));
+    }
+
+    function setupHostChain() private {
+        market = deployMarket({
+            symbol: "WETH",
+            decimals: 18,
+            owner: admin,
+            operatorContract: deployOperator()
+        });
     }
 }

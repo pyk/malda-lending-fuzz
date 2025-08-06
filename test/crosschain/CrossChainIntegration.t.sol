@@ -41,9 +41,9 @@ contract CrossChainIntegrationTest is CrossChainTest {
 
         SupplyAndMintParams memory params = bind(fuzz);
 
-        underlying.mint(params.user, params.amount);
+        gatewayUnderlying.mint(params.user, params.amount);
         vm.prank(params.user);
-        underlying.approve(address(gateway), params.amount);
+        gatewayUnderlying.approve(address(gateway), params.amount);
 
         vm.prank(params.user);
         try gateway.supplyOnHost({
