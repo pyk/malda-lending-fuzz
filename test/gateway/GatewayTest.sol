@@ -54,23 +54,25 @@ contract GatewayTest is Test {
     ////////////////////////////////////////////////////////////////
 
     uint256 constant GAS_FEE = 0.01 ether;
-    mapping(mTokenGateway gateway => uint256 amount) maxSupplyAmounts;
 
-    function setMaxSupplyAmount(
+    // Maximum amount for supply, borrow and withdraw
+    mapping(mTokenGateway gateway => uint256 amount) maxAmounts;
+
+    function setMaxAmount(
         mTokenGateway gatewayContract,
         uint256 amount
     )
         private
     {
-        maxSupplyAmounts[gatewayContract] = amount;
+        maxAmounts[gatewayContract] = amount;
     }
 
-    function getMaxSupplyAmount(mTokenGateway gatewayContract)
+    function getMaxAmount(mTokenGateway gatewayContract)
         internal
         view
         returns (uint256 amount)
     {
-        amount = maxSupplyAmounts[gatewayContract];
+        amount = maxAmounts[gatewayContract];
     }
 
     /// SETUP
@@ -80,6 +82,7 @@ contract GatewayTest is Test {
         setupUsers();
         setupContracts();
         setupGateways();
+        setupRoles();
     }
 
     function setupUsers() private {
@@ -144,6 +147,17 @@ contract GatewayTest is Test {
             maxSupplyAmount: 1_000_000 * 1e6,
             gasFee: GAS_FEE
         });
+    }
+
+    function setupRoles() private {
+        vm.startPrank(admin);
+        roles.allowFor(address(this), roles.PROOF_FORWARDER(), true);
+        roles.allowFor(
+            address(batchSubmitter), //
+            roles.PROOF_BATCH_FORWARDER(),
+            true
+        );
+        vm.stopPrank();
     }
 
     /// DEPLOY PROXY
@@ -307,7 +321,7 @@ contract GatewayTest is Test {
         vm.prank(owner);
         newGateway.setGasFee(gasFee);
 
-        setMaxSupplyAmount(newGateway, maxSupplyAmount);
+        setMaxAmount(newGateway, maxSupplyAmount);
 
         vm.label(address(newGateway), string.concat(label, "Gateway"));
     }
