@@ -12,6 +12,7 @@ import {Risc0VerifierMock} from "../mocks/Risc0VerifierMock.sol";
 import {ZkVerifier} from "../../src/verifier/ZkVerifier.sol";
 import {AssetMock} from "../mocks/AssetMock.sol";
 import {mTokenGateway} from "../../src/mToken/extension/mTokenGateway.sol";
+import {BatchSubmitter} from "../../src/mToken/BatchSubmitter.sol";
 // forgefmt: disable-end
 
 /// @title GatewayTest
@@ -37,6 +38,7 @@ contract GatewayTest is Test {
     Blacklister blacklister;
     Risc0VerifierMock risc0Mock;
     ZkVerifier zkVerifier;
+    BatchSubmitter batchSubmitter;
     mTokenGateway wethGateway;
     mTokenGateway[] gateways;
 
@@ -53,6 +55,23 @@ contract GatewayTest is Test {
 
     uint256 constant GAS_FEE = 0.01 ether;
     mapping(mTokenGateway gateway => uint256 amount) maxSupplyAmounts;
+
+    function setMaxSupplyAmount(
+        mTokenGateway gatewayContract,
+        uint256 amount
+    )
+        private
+    {
+        maxSupplyAmounts[gatewayContract] = amount;
+    }
+
+    function getMaxSupplyAmount(mTokenGateway gatewayContract)
+        internal
+        view
+        returns (uint256 amount)
+    {
+        amount = maxSupplyAmounts[gatewayContract];
+    }
 
     /// SETUP
     ////////////////////////////////////////////////////////////////
@@ -71,17 +90,23 @@ contract GatewayTest is Test {
     }
 
     function setupContracts() private {
-        roles = deployRoles({_name: "Roles", _admin: admin});
+        roles = deployRoles({label: "Roles", owner: admin});
         blacklister = deployBlacklister({
-            _name: "Blacklister",
-            _admin: admin,
-            _roles: address(roles)
+            label: "Blacklister",
+            owner: admin,
+            rolesContract: roles
         });
-        risc0Mock = deployRisc0VerifierMock({_name: "Risc0VerifierMock"});
+        risc0Mock = deployRisc0VerifierMock({label: "Risc0VerifierMock"});
         zkVerifier = deployZkVerifier({
-            _name: "ZkVerifier",
-            _admin: admin,
-            _verifier: address(risc0Mock)
+            label: "ZkVerifier",
+            owner: admin,
+            risc0VerifierContract: risc0Mock
+        });
+        batchSubmitter = deployBatchSubmitter({
+            label: "BatchSubmitter",
+            owner: admin,
+            rolesContract: roles,
+            zkVerifierContract: zkVerifier
         });
     }
 
@@ -89,174 +114,229 @@ contract GatewayTest is Test {
         gateways = new mTokenGateway[](3);
 
         gateways[0] = deployGateway({
-            _name: "WETH",
-            _decimals: 18,
-            _admin: admin,
-            _roles: address(roles),
-            _blacklister: address(blacklister),
-            _zkVerifier: address(zkVerifier),
-            _maxSupplyAmount: 10 * 1e18
+            label: "WETH",
+            underlyingDecimals: 18,
+            owner: admin,
+            rolesContract: roles,
+            blacklisterContract: blacklister,
+            zkVerifierContract: zkVerifier,
+            maxSupplyAmount: 10 * 1e18,
+            gasFee: GAS_FEE
         });
         wethGateway = gateways[0];
         gateways[1] = deployGateway({
-            _name: "USDT",
-            _decimals: 6,
-            _admin: admin,
-            _roles: address(roles),
-            _blacklister: address(blacklister),
-            _zkVerifier: address(zkVerifier),
-            _maxSupplyAmount: 1_000_000 * 1e6
+            label: "USDT",
+            underlyingDecimals: 6,
+            owner: admin,
+            rolesContract: roles,
+            blacklisterContract: blacklister,
+            zkVerifierContract: zkVerifier,
+            maxSupplyAmount: 1_000_000 * 1e6,
+            gasFee: GAS_FEE
         });
         gateways[2] = deployGateway({
-            _name: "USDC",
-            _decimals: 6,
-            _admin: admin,
-            _roles: address(roles),
-            _blacklister: address(blacklister),
-            _zkVerifier: address(zkVerifier),
-            _maxSupplyAmount: 1_000_000 * 1e6
+            label: "USDC",
+            underlyingDecimals: 6,
+            owner: admin,
+            rolesContract: roles,
+            blacklisterContract: blacklister,
+            zkVerifierContract: zkVerifier,
+            maxSupplyAmount: 1_000_000 * 1e6,
+            gasFee: GAS_FEE
         });
     }
 
     /// DEPLOY PROXY
     ////////////////////////////////////////////////////////////////
 
-    function deployProxy(address _implementation) private returns (address) {
-        ERC1967Proxy proxy = new ERC1967Proxy(_implementation, "");
+    function deployProxy(address implementation) private returns (address) {
+        ERC1967Proxy proxy = new ERC1967Proxy(implementation, "");
         return address(proxy);
     }
 
     /// DEPLOY ROLES
     ////////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Deploys a new Roles contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The address to set as the contract's owner.
+     * @return newRoles The newly deployed Roles contract instance.
+     */
     function deployRoles(
-        string memory _name,
-        address _admin
+        string memory label,
+        address owner
     )
         private
-        returns (Roles _roles)
+        returns (Roles newRoles)
     {
-        _roles = new Roles(_admin);
-        vm.label(address(_roles), _name);
+        newRoles = new Roles(owner);
+        vm.label(address(newRoles), label);
     }
 
     /// DEPLOY BLACKLISTER
     ////////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Deploys a new Blacklister contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The address to set as the contract's owner.
+     * @param rolesContract The Roles contract instance for dependency injection.
+     * @return newBlacklister The newly deployed Blacklister contract instance.
+     */
     function deployBlacklister(
-        string memory _name,
-        address _admin,
-        address _roles
+        string memory label,
+        address owner,
+        Roles rolesContract
     )
         internal
-        returns (Blacklister _blacklister)
+        returns (Blacklister newBlacklister)
     {
         Blacklister implementation = new Blacklister();
         address proxy = deployProxy(address(implementation));
-        _blacklister = Blacklister(proxy);
-        _blacklister.initialize(payable(_admin), _roles);
-        vm.label(address(_blacklister), _name);
+        newBlacklister = Blacklister(proxy);
+        newBlacklister.initialize(payable(owner), address(rolesContract));
+        vm.label(address(newBlacklister), label);
     }
 
     /// DEPLOY RISC0 VERIFIER MOCK
     ////////////////////////////////////////////////////////////////
 
-    function deployRisc0VerifierMock(string memory _name)
+    /**
+     * @notice Deploys a new Risc0VerifierMock contract.
+     * @param label The label for Forge's vm.label.
+     * @return newMock The newly deployed Risc0VerifierMock contract instance.
+     */
+    function deployRisc0VerifierMock(string memory label)
         internal
-        returns (Risc0VerifierMock _mock)
+        returns (Risc0VerifierMock newMock)
     {
-        _mock = new Risc0VerifierMock();
-        vm.label(address(_mock), _name);
+        newMock = new Risc0VerifierMock();
+        vm.label(address(newMock), label);
     }
 
     /// DEPLOY ZK VERIFIER
     ////////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Deploys a new ZkVerifier contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The address to set as the contract's owner.
+     * @param risc0VerifierContract The Risc0VerifierMock contract instance for dependency injection.
+     * @return newZkVerifier The newly deployed ZkVerifier contract instance.
+     */
     function deployZkVerifier(
-        string memory _name,
-        address _admin,
-        address _verifier
+        string memory label,
+        address owner,
+        Risc0VerifierMock risc0VerifierContract
     )
         internal
-        returns (ZkVerifier _zkVerifier)
+        returns (ZkVerifier newZkVerifier)
     {
         bytes32 imageId = keccak256("ZkVerifier");
-        _zkVerifier = new ZkVerifier(_admin, imageId, _verifier);
-        vm.label(address(_zkVerifier), _name);
+        newZkVerifier = new ZkVerifier(
+            owner, //
+            imageId,
+            address(risc0VerifierContract)
+        );
+        vm.label(address(newZkVerifier), label);
     }
 
     /// DEPLOY ASSET MOCK
     ////////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Deploys a new AssetMock contract.
+     * @param label The label for Forge's vm.label and the symbol of the asset.
+     * @param decimals The decimals of the asset.
+     * @return newMock The newly deployed AssetMock contract instance.
+     */
     function deployAssetMock(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
+        string memory label,
+        uint8 decimals
     )
         internal
-        returns (AssetMock _asset)
+        returns (AssetMock newMock)
     {
-        _asset = new AssetMock(_name, _symbol, _decimals);
-        vm.label(address(_asset), _symbol);
+        newMock = new AssetMock(label, label, decimals);
+        vm.label(address(newMock), label);
     }
 
     /// DEPLOY GATEWAY
     ////////////////////////////////////////////////////////////////
 
+    /**
+     * @notice Deploys a new mTokenGateway contract including its underlying asset.
+     * @param label The label for Forge's vm.label and the symbol of the underlying asset.
+     * @param owner The address to set as the contract's owner.
+     * @param rolesContract The Roles contract instance for dependency injection.
+     * @param blacklisterContract The Blacklister contract instance for dependency injection.
+     * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
+     * @param gasFee The minimum amount of ETH per supplyOnHost calls.
+     * @param maxSupplyAmount The maximum amount per supplyOnHost calls.
+     * @return newGateway The newly deployed mTokenGateway contract instance.
+     */
     function deployGateway(
-        string memory _name,
-        uint8 _decimals,
-        address _admin,
-        address _roles,
-        address _blacklister,
-        address _zkVerifier,
-        uint256 _maxSupplyAmount
+        string memory label,
+        uint8 underlyingDecimals,
+        address owner,
+        Roles rolesContract,
+        Blacklister blacklisterContract,
+        ZkVerifier zkVerifierContract,
+        uint256 gasFee,
+        uint256 maxSupplyAmount
     )
         internal
-        returns (mTokenGateway _gateway)
+        returns (mTokenGateway newGateway)
     {
         AssetMock underlying = deployAssetMock({
-            _name: _name,
-            _symbol: _name,
-            _decimals: _decimals
+            label: label, //
+            decimals: underlyingDecimals
         });
         mTokenGateway implementation = new mTokenGateway();
         address proxy = deployProxy(address(implementation));
-        _gateway = mTokenGateway(proxy);
-        _gateway.initialize(
-            payable(_admin),
+        newGateway = mTokenGateway(proxy);
+        newGateway.initialize(
+            payable(owner),
             address(underlying),
-            _roles,
-            _blacklister,
-            _zkVerifier
+            address(rolesContract),
+            address(blacklisterContract),
+            address(zkVerifierContract)
         );
 
-        vm.prank(_admin);
-        _gateway.setGasFee(GAS_FEE);
+        vm.prank(owner);
+        newGateway.setGasFee(gasFee);
 
-        setMaxSupplyAmount(_gateway, _maxSupplyAmount);
+        setMaxSupplyAmount(newGateway, maxSupplyAmount);
 
-        vm.label(address(_gateway), string.concat(_name, "Gateway"));
-        vm.label(address(underlying), _name);
+        vm.label(address(newGateway), string.concat(label, "Gateway"));
     }
 
-    /// UTILITIES
+    /// DEPLOY BATCH SUBMITTER
     ////////////////////////////////////////////////////////////////
 
-    function setMaxSupplyAmount(
-        mTokenGateway _gateway,
-        uint256 _amount
+    /**
+     * @notice Deploys a new BatchSubmitter contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The address to set as the owner.
+     * @param rolesContract The Roles contract instance for dependency injection.
+     * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
+     * @return newSubmitter The newly deployed BatchSubmitter contract instance.
+     */
+    function deployBatchSubmitter(
+        string memory label,
+        address owner,
+        Roles rolesContract,
+        ZkVerifier zkVerifierContract
     )
-        private
-    {
-        maxSupplyAmounts[_gateway] = _amount;
-    }
-
-    function getMaxSupplyAmount(mTokenGateway _gateway)
         internal
-        view
-        returns (uint256 _amount)
+        returns (BatchSubmitter newSubmitter)
     {
-        _amount = maxSupplyAmounts[_gateway];
+        newSubmitter = new BatchSubmitter(
+            address(rolesContract), //
+            address(zkVerifierContract),
+            owner
+        );
+        vm.label(address(newSubmitter), label);
     }
 }
