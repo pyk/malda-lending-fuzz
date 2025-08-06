@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // forgefmt: disable-start
-import {GatewayTest, mTokenGateway, AssetMock, BatchSubmitter} from "./GatewayTest.sol";
+import {GatewayTest, mTokenGateway, AssetMock} from "./GatewayTest.sol";
 
 import {mTokenProofDecoderLib} from "../../src/libraries/mTokenProofDecoderLib.sol";
 // forgefmt: disable-end
@@ -16,6 +16,10 @@ contract GatewayInvariantTest is GatewayTest {
     // Tracks the total amount deposited by a user on a gateway.
     mapping(mTokenGateway gateway => mapping(address user => uint256 amount))
         amountIns;
+
+    // Tracks the total amount withdrawed by a user on a gateway.
+    mapping(mTokenGateway gateway => mapping(address user => uint256 amount))
+        amountOuts;
 
     // Models the maximum cumulative credit proven from the host chain for a user's withdrawals.
     // This value can only increase, simulating new proofs arriving.
@@ -41,6 +45,27 @@ contract GatewayInvariantTest is GatewayTest {
         returns (uint256 amount)
     {
         amount = amountIns[gateway][user];
+    }
+
+    function increaseAmountOut(
+        mTokenGateway gateway,
+        address user,
+        uint256 amount
+    )
+        private
+    {
+        amountOuts[gateway][user] += amount;
+    }
+
+    function getAmountOut(
+        mTokenGateway gateway,
+        address user
+    )
+        private
+        view
+        returns (uint256 amount)
+    {
+        amount = amountOuts[gateway][user];
     }
 
     function increaseProvenCreditOut(
@@ -205,23 +230,26 @@ contract GatewayInvariantTest is GatewayTest {
         });
     }
 
-    struct BatchProcessFuzz {
+    struct OutHereFuzz {
         uint256 gatewayId;
         uint256 userId;
         uint256 amount;
     }
 
-    struct BatchProcessParams {
+    struct OutHereParams {
         mTokenGateway gateway;
         address user;
         uint256 amount;
-        BatchSubmitter.BatchProcessMsg data;
+        bytes journalData;
+        bytes seal;
+        uint256[] amounts;
+        address receiver;
     }
 
-    function bind(BatchProcessFuzz memory fuzz)
+    function bind(OutHereFuzz memory fuzz)
         internal
         view
-        returns (BatchProcessParams memory params)
+        returns (OutHereParams memory params)
     {
         params.gateway = getRandomGateway(fuzz.gatewayId);
         params.user = getRandomUser(fuzz.userId);
@@ -238,8 +266,7 @@ contract GatewayInvariantTest is GatewayTest {
             params.amount = bound(fuzz.amount, 1, availableToWithdraw);
         }
 
-        address[] memory receivers = new address[](1);
-        receivers[0] = params.user;
+        params.receiver = params.user;
 
         bytes[] memory journals = new bytes[](1);
         journals[0] = mTokenProofDecoderLib.encodeJournal({
@@ -251,38 +278,38 @@ contract GatewayInvariantTest is GatewayTest {
             dstChainId: uint32(block.chainid),
             L1inclusion: false // Not checked by batch submitter
         });
-        bytes memory journalData = abi.encode(journals);
-
-        address[] memory mTokens = new address[](1);
-        mTokens[0] = address(params.gateway);
+        params.journalData = abi.encode(journals);
 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = params.amount;
-
-        bytes4[] memory selectors = new bytes4[](1);
-        selectors[0] = mTokenGateway.outHere.selector;
-
-        bytes32[] memory initHashes = new bytes32[](1);
-        initHashes[0] = bytes32(0);
-
-        params.data = BatchSubmitter.BatchProcessMsg({
-            receivers: receivers,
-            journalData: journalData,
-            seal: "",
-            mTokens: mTokens,
-            amounts: amounts,
-            minAmountsOut: amounts,
-            selectors: selectors,
-            initHashes: initHashes,
-            startIndex: 0
-        });
+        params.amounts = amounts;
     }
 
-    function batchProcess(BatchProcessFuzz memory fuzz) external {
-        BatchProcessParams memory params = bind(fuzz);
+    function skip(OutHereParams memory params) internal view returns (bool) {
+        if (params.amount == 0) {
+            return true;
+        }
+    }
 
-        try batchSubmitter.batchProcess(params.data) {}
-        catch {
+    function outHere(OutHereFuzz memory fuzz) external {
+        OutHereParams memory params = bind(fuzz);
+
+        if (skip(params)) {
+            return;
+        }
+
+        try params.gateway.outHere({
+            journalData: params.journalData,
+            seal: params.seal,
+            amounts: params.amounts,
+            receiver: params.receiver
+        }) {
+            increaseAmountOut({
+                gateway: params.gateway,
+                user: params.user,
+                amount: params.amount
+            });
+        } catch {
             assert(false);
         }
     }
@@ -290,7 +317,7 @@ contract GatewayInvariantTest is GatewayTest {
     /// INVARIANTS
     ////////////////////////////////////////////////////////////////
 
-    function property_accAmountIn(
+    function property_getProof(
         mTokenGateway gateway,
         address user
     )
@@ -301,8 +328,13 @@ contract GatewayInvariantTest is GatewayTest {
             gateway: gateway, //
             user: user
         });
-        uint256 amountIn = gateway.accAmountIn(user);
+        uint256 actualAmountOut = getAmountOut({
+            gateway: gateway, //
+            user: user
+        });
+        (uint256 amountIn, uint256 amountOut) = gateway.getProofData(user, 0);
         assertEq(actualAmountIn, amountIn, "accAmountIn invalid");
+        assertEq(actualAmountOut, amountOut, "accAmountOut invalid");
     }
 
     function invariant_gateway() external view {
@@ -310,7 +342,7 @@ contract GatewayInvariantTest is GatewayTest {
             mTokenGateway gateway = gateways[i];
             for (uint256 j = 0; j < users.length; j++) {
                 address user = users[j];
-                property_accAmountIn(gateway, user);
+                property_getProof(gateway, user);
             }
         }
     }
