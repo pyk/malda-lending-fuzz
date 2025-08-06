@@ -13,6 +13,10 @@ import {ZkVerifier} from "../src/verifier/ZkVerifier.sol";
 import {AssetMock} from "./mocks/AssetMock.sol";
 import {mTokenGateway} from "../src/mToken/extension/mTokenGateway.sol";
 import {BatchSubmitter} from "../src/mToken/BatchSubmitter.sol";
+import {Operator} from "../src/Operator/Operator.sol";
+import {JumpRateModelV4} from "../src/interest/JumpRateModelV4.sol";
+import {mErc20Host} from "../src/mToken/host/mErc20Host.sol";
+
 // forgefmt: disable-end
 
 /// @title MaldaTest
@@ -255,5 +259,55 @@ contract MaldaTest is Test {
             owner
         );
         vm.label(address(newSubmitter), label);
+    }
+
+    /// DEPLOY MARKET
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new mErc20Host market contract via an ERC1967 proxy.
+     * @param symbol The ERC-20 symbol of the underlying asset.
+     * @param decimals The ERC-20 decimals of the underlying asset and the mToken.
+     * @param owner The address to set as the contract's admin.
+     * @param operatorContract The Operator contract instance for dependency injection.
+     * @param interestRateModelContract The JumpRateModelV4 contract instance for dependency injection.
+     * @param initialExchangeRate The initial exchange rate mantissa for the market.
+     * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
+     * @param rolesContract The Roles contract instance for dependency injection.
+     * @return newMarket The newly deployed mErc20Host contract instance.
+     */
+    function deployMarket(
+        string memory symbol,
+        uint8 decimals,
+        address owner,
+        Operator operatorContract,
+        JumpRateModelV4 interestRateModelContract,
+        uint256 initialExchangeRate,
+        ZkVerifier zkVerifierContract,
+        Roles rolesContract
+    )
+        internal
+        returns (mErc20Host newMarket)
+    {
+        AssetMock underlying = deployAssetMock({
+            label: string.concat(symbol, "Market"), //
+            decimals: decimals
+        });
+        mErc20Host implementation = new mErc20Host();
+        address proxy = deployProxy(address(implementation));
+        newMarket = mErc20Host(proxy);
+        newMarket.initialize({
+            underlying_: address(underlying),
+            operator_: address(operatorContract),
+            interestRateModel_: address(interestRateModelContract),
+            initialExchangeRateMantissa_: initialExchangeRate,
+            name_: string.concat("m", symbol),
+            symbol_: string.concat("m", symbol),
+            decimals_: decimals,
+            admin_: payable(owner),
+            zkVerifier_: address(zkVerifierContract),
+            roles_: address(rolesContract)
+        });
+        vm.label(address(newMarket), string.concat("m", symbol));
     }
 }
