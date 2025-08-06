@@ -6,12 +6,46 @@ secured by zkProofs.
 
 ## Security Properties
 
-| Contract | Property | Approach               | Result |
-| :------- | :------- | :--------------------- | :----- |
-| Gateway  | `G01`    | Foundry Invariant Test | PASSED |
-| Gateway  | `G02`    | Foundry Invariant Test | PASSED |
+This test suite is structured to verify key security properties of the Malda
+protocol at both the modular and integration levels. Properties are tested using
+a combination of unit tests, invariant tests, and end-to-end integration tests.
 
-- `G01`: A user's deposit on an extension chain must be reflected as an increase
-  in `accAmountIn`, making it claimable on the host chain.
-- `G02`: Funds can only be withdrawn from the gateway if a corresponding credit
-  (`accAmountOut`) has been proven from the host chain.
+### Gateway Module
+
+These properties are tested in isolation on the `mTokenGateway` contract that
+deployed on the Extension Chain to ensure its internal logic is sound.
+
+| ID  | Property                                                                                               | Approach               | Result  |
+| :-- | :----------------------------------------------------------------------------------------------------- | :--------------------- | :------ |
+| G01 | A user's deposit via `supplyOnHost` must be correctly and additively reflected in their `accAmountIn`. | Foundry Invariant Test | PASSED  |
+| G02 | A user can only withdraw funds via `outHere` up to the total credit proven for them (`accAmountOut`).  | Foundry Invariant Test | PASSED  |
+| G03 | All state-changing functions are properly guarded by the `notPaused` modifier.                         | Foundry Unit Test      | PENDING |
+| G04 | Access control for administrative functions (e.g., `setGasFee`) is restricted to the owner.            | Foundry Unit Test      | PENDING |
+
+- **G01**: Ensures that every deposit on an extension chain creates a verifiable
+  credit that can later be used on the host chain. This prevents loss of user
+  funds during the first step of a cross-chain supply.
+- **G02**: Guarantees that the gateway contract cannot be drained of funds.
+  Withdrawals are strictly limited by the state proven from the host chain,
+  preventing unauthorized fund transfers.
+
+### Cross-Chain Interaction
+
+These properties are verified through end-to-end integration tests that simulate
+the full communication flow between the Host (`mErc20Host`) and Extension
+(`mTokenGateway`) chains.
+
+| ID     | Property                                                                                                                                                   | Approach                 | Result  |
+| :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------- | :------ |
+| CCI-01 | A deposit on an extension chain (`accAmountIn`) can be successfully claimed for mTokens on the host chain.                                                 | Foundry Integration Test | PASSED  |
+| CCI-02 | A withdrawal initiated on the host chain (`accAmountOut`) can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity. | Foundry Integration Test | PENDING |
+
+- **CCI-01:** This property proves that the credit created on the extension
+  chain (G01) is not just recorded correctly but is also functional and can be
+  used to mint the corresponding mTokens on the host chain, completing the
+  cross-chain supply operation.
+- **CCI-02:** This proves the reverse flow. A user who has burned mTokens on the
+  host to create a credit (`accAmountOut`) can successfully use a ZK proof to
+  claim their underlying assets on an extension chain. This test also implicitly
+  verifies the dependency on the Rebalancer by checking for expected reverts
+  when liquidity is insufficient.
