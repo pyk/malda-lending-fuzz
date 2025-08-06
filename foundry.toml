@@ -11,6 +11,8 @@ single_line_statement_blocks = "multi"
 multiline_func_header = "all"
 
 [invariant]
+runs = 100000
+depth = 25
 fail_on_revert = true
 corpus_dir = "corpus"
 show_edge_coverage = true
