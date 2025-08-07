@@ -28,4 +28,7 @@ exclude_lints = [
   "mixed-case-function",
   "screaming-snake-case-const",
   "screaming-snake-case-immutable",
+  # bug https://github.com/foundry-rs/foundry/issues/11227
+  # "unwrapped-modifier-logic",
 ]
+
