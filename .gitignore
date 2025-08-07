@@ -18,5 +18,5 @@ corpus
 coverage
 
 # debug
-call-trace.txt
+call-trace*.txt
 
