@@ -20,3 +20,5 @@ coverage
 # debug
 call-trace*.txt
 
+# mac
+.DS_Store
