@@ -11,7 +11,9 @@ import {
     Blacklister,
     RewardDistributor,
     Operator,
-    JumpRateModelV4
+    JumpRateModelV4,
+    BatchSubmitter,
+    ZkVerifier
 } from "../MaldaTest.sol";
 // forgefmt: disable-end
 
@@ -25,6 +27,7 @@ contract CrossChainTest is MaldaTest {
     AssetMock gatewayUnderlying;
     mErc20Host market;
     AssetMock marketUnderlying;
+    BatchSubmitter batchSubmitter;
 
     /// SETUP
     ////////////////////////////////////////////////////////////////
@@ -92,6 +95,13 @@ contract CrossChainTest is MaldaTest {
             jumpMultiplierPerYear: 4999999999974048000,
             kink: 900000000000000000 // 90%
         });
+        ZkVerifier zkVerifier = deployZkVerifier({
+            label: "HostZkVerifier",
+            owner: admin,
+            risc0VerifierContract: deployRisc0VerifierMock({
+                label: "HostRisc0VerifierMock"
+            })
+        });
 
         DeployMarketParams memory marketParams = DeployMarketParams({
             symbol: "WETH",
@@ -100,17 +110,30 @@ contract CrossChainTest is MaldaTest {
             rolesContract: roles,
             operatorContract: operator,
             interestRateModelContract: interestRateModel,
-            zkVerifierContract: deployZkVerifier({
-                label: "HostZkVerifier",
-                owner: admin,
-                risc0VerifierContract: deployRisc0VerifierMock({
-                    label: "HostRisc0VerifierMock"
-                })
-            }),
+            zkVerifierContract: zkVerifier,
             initialExchangeRate: 2e16
         });
 
         market = deployMarket(marketParams);
         marketUnderlying = AssetMock(payable(market.underlying()));
+        batchSubmitter = deployBatchSubmitter({
+            label: "HostBatchSubmitter",
+            owner: admin,
+            rolesContract: roles,
+            zkVerifierContract: zkVerifier
+        });
+
+        setupRoles(roles);
+    }
+
+    function setupRoles(Roles roles) private {
+        vm.startPrank(admin);
+        roles.allowFor(address(this), roles.PROOF_FORWARDER(), true);
+        roles.allowFor(
+            address(batchSubmitter), //
+            roles.PROOF_BATCH_FORWARDER(),
+            true
+        );
+        vm.stopPrank();
     }
 }
