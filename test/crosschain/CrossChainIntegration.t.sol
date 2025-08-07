@@ -14,8 +14,6 @@ import {mTokenProofDecoderLib} from "../../src/libraries/mTokenProofDecoderLib.s
 /// @title Cross Chain Integration Test
 /// @custom:command forge test --match-contract CrossChainIntegrationTest
 contract CrossChainIntegrationTest is CrossChainTest {
-    uint32 private constant LINEA_CHAIN_ID = 59144;
-
     function setUp() external {
         setupCrossChainTest();
     }
@@ -69,7 +67,7 @@ contract CrossChainIntegrationTest is CrossChainTest {
             address(market),
             gateway.accAmountIn(params.receiver),
             gateway.accAmountOut(params.receiver),
-            uint32(block.chainid),
+            ETHEREUM_CHAIN_ID,
             LINEA_CHAIN_ID,
             false
         );
@@ -129,6 +127,8 @@ contract CrossChainIntegrationTest is CrossChainTest {
 
         // Sequencer observes the event and creates the batch message for the host chain
         BatchSubmitter.BatchProcessMsg memory batchMsg = createBatchMsg(params);
+
+        vm.chainId(LINEA_CHAIN_ID);
 
         // Sequencer calls the batch submitter on the host chain
         try batchSubmitter.batchProcess(batchMsg) {}

@@ -22,6 +22,9 @@ import {
 /// @title CrossChainTest
 /// @dev Base contract for unit, fuzz and invariant tests
 contract CrossChainTest is MaldaTest {
+    uint32 internal constant ETHEREUM_CHAIN_ID = 1;
+    uint32 internal constant LINEA_CHAIN_ID = 59144;
+
     /// CONTRACTS
     ////////////////////////////////////////////////////////////////
 
@@ -152,11 +155,14 @@ contract CrossChainTest is MaldaTest {
         MixedPriceOracleV4 oracle = deployOracle(oracleParams);
 
         vm.startPrank(admin);
+        market.updateAllowedChain(ETHEREUM_CHAIN_ID, true);
         operator.setPriceOracle(address(oracle));
         operator.supportMarket(address(market));
-        operator.setCollateralFactor(address(market), 810000000000000000); // 81% collateral factor
+        // 81% collateral factor
+        operator.setCollateralFactor(address(market), 810000000000000000);
         // operator.setCloseFactor(0.5e18); // 50% close factor
-        operator.setLiquidationIncentive(address(market), 1060000000000000000); // 6% liquidation incentive
+        // 6% liquidation incentive
+        operator.setLiquidationIncentive(address(market), 1060000000000000000);
         vm.stopPrank();
 
         setupRoles(roles);
