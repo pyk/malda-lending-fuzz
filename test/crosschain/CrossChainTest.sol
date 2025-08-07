@@ -32,6 +32,7 @@ contract CrossChainTest is MaldaTest {
     AssetMock gatewayUnderlying;
     mErc20Host market;
     AssetMock marketUnderlying;
+    // NOTE: we use this for both host and extension chain
     BatchSubmitter batchSubmitter;
 
     /// SETUP
@@ -43,8 +44,8 @@ contract CrossChainTest is MaldaTest {
     }
 
     function setupContracts() private {
-        setupExtensionChain();
         setupHostChain();
+        setupExtensionChain();
     }
 
     function setupExtensionChain() private {
@@ -72,6 +73,7 @@ contract CrossChainTest is MaldaTest {
             maxSupplyAmount: 100 * 1e18
         });
         gatewayUnderlying = AssetMock(payable(gateway.underlying()));
+        setupRoles(roles);
     }
 
     function setupHostChain() private {
