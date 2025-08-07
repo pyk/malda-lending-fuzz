@@ -51,23 +51,31 @@ contract MaldaTest is Test {
     uint256 constant GAS_FEE = 0.01 ether;
 
     // Maximum amount for supply, borrow and withdraw
-    mapping(mTokenGateway gateway => uint256 amount) maxAmounts;
+    mapping(address => uint256) maxAmounts;
+    mapping(address => uint256) minAmounts;
 
-    function setMaxAmount(
-        mTokenGateway gatewayContract,
-        uint256 amount
-    )
-        private
-    {
-        maxAmounts[gatewayContract] = amount;
+    function setMaxAmount(address addy, uint256 amount) internal {
+        maxAmounts[addy] = amount;
     }
 
-    function getMaxAmount(mTokenGateway gatewayContract)
+    function getMaxAmount(address addy)
         internal
         view
         returns (uint256 amount)
     {
-        amount = maxAmounts[gatewayContract];
+        amount = maxAmounts[addy];
+    }
+
+    function setMinAmount(address addy, uint256 amount) internal {
+        minAmounts[addy] = amount;
+    }
+
+    function getMinAmount(address addy)
+        internal
+        view
+        returns (uint256 amount)
+    {
+        amount = minAmounts[addy];
     }
 
     /// DEPLOY PROXY
@@ -197,6 +205,7 @@ contract MaldaTest is Test {
      * @param blacklisterContract The Blacklister contract instance for dependency injection.
      * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
      * @param gasFee The minimum amount of ETH per supplyOnHost calls.
+     * @param minSupplyAmount The min amount per supplyOnHost calls.
      * @param maxSupplyAmount The maximum amount per supplyOnHost calls.
      * @return newGateway The newly deployed mTokenGateway contract instance.
      */
@@ -208,6 +217,7 @@ contract MaldaTest is Test {
         Blacklister blacklisterContract,
         ZkVerifier zkVerifierContract,
         uint256 gasFee,
+        uint256 minSupplyAmount,
         uint256 maxSupplyAmount
     )
         internal
@@ -231,7 +241,8 @@ contract MaldaTest is Test {
         vm.prank(owner);
         newGateway.setGasFee(gasFee);
 
-        setMaxAmount(newGateway, maxSupplyAmount);
+        setMinAmount(address(newGateway), minSupplyAmount);
+        setMaxAmount(address(newGateway), maxSupplyAmount);
 
         vm.label(address(newGateway), string.concat(label, "Gateway"));
     }
