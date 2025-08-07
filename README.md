@@ -15,12 +15,12 @@ a combination of unit tests, invariant tests, and end-to-end integration tests.
 These properties are tested in isolation on the `mTokenGateway` contract that
 deployed on the Extension Chain to ensure its internal logic is sound.
 
-| ID   | Property                                                                                               | Approach               | Result  |
-| :--- | :----------------------------------------------------------------------------------------------------- | :--------------------- | :------ |
-| GW01 | A user's deposit via `supplyOnHost` must be correctly and additively reflected in their `accAmountIn`. | Foundry Invariant Test | PASSED  |
-| GW02 | A user can only withdraw funds via `outHere` up to the total credit proven for them (`accAmountOut`).  | Foundry Invariant Test | PASSED  |
-| GW03 | All state-changing functions are properly guarded by the `notPaused` modifier.                         | Foundry Unit Test      | PENDING |
-| GW04 | Access control for administrative functions (e.g., `setGasFee`) is restricted to the owner.            | Foundry Unit Test      | PENDING |
+| ID   | Property                                                                                               | Approach | Result  |
+| :--- | :----------------------------------------------------------------------------------------------------- | :------- | :------ |
+| GW01 | A user's deposit via `supplyOnHost` must be correctly and additively reflected in their `accAmountIn`. | Foundry  | PASSED  |
+| GW02 | A user can only withdraw funds via `outHere` up to the total credit proven for them (`accAmountOut`).  | Foundry  | PASSED  |
+| GW03 | All state-changing functions are properly guarded by the `notPaused` modifier.                         | Foundry  | PENDING |
+| GW04 | Access control for administrative functions (e.g., `setGasFee`) is restricted to the owner.            | Foundry  | PENDING |
 
 - **GW01**: Ensures that every deposit on an extension chain creates a
   verifiable credit that can later be used on the host chain. This prevents loss
@@ -35,10 +35,10 @@ These properties are verified through end-to-end integration tests that simulate
 the full communication flow between the Host (`mErc20Host`) and Extension
 (`mTokenGateway`) chains.
 
-| ID   | Property                                                                                                                                  | Approach | Result  |
-| :--- | :---------------------------------------------------------------------------------------------------------------------------------------- | :------- | :------ |
-| CC01 | A deposit on an extension chain can be successfully claimed for mTokens on the host chain.                                                | Foundry  | PASSED  |
-| CC02 | A withdrawal initiated on the host chain can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity. | Foundry  | PENDING |
+| ID   | Property                                                                                                                                  | Approach | Result |
+| :--- | :---------------------------------------------------------------------------------------------------------------------------------------- | :------- | :----- |
+| CC01 | A deposit on an extension chain can be successfully claimed for mTokens on the host chain.                                                | Foundry  | PASSED |
+| CC02 | A withdrawal initiated on the host chain can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity. | Foundry  | PASSED |
 
 - **CC01:** This property proves that the credit created on the extension chain
   (G01) is not just recorded correctly but is also functional and can be used to
