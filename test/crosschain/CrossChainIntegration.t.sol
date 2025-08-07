@@ -102,7 +102,7 @@ contract CrossChainIntegrationTest is CrossChainTest {
         batchMsg.startIndex = 0;
     }
 
-    /// @custom:property [CCI01] Verifies the end-to-end flow for a cross-chain supply.
+    /// @custom:property [CC01] Verifies the end-to-end flow for a cross-chain supply.
     /// @dev A user supplies underlying on an extension chain and successfully
     ///      claims mTokens on the host chain.
     function testFuzz_SupplyAndBatchProcessMint(SupplyAndMintFuzz memory fuzz)
@@ -110,9 +110,23 @@ contract CrossChainIntegrationTest is CrossChainTest {
     {
         SupplyAndMintParams memory params = bind(fuzz);
 
+        vm.chainId(ETHEREUM_CHAIN_ID);
         gatewayUnderlying.mint(params.user, params.amount);
         vm.prank(params.user);
         gatewayUnderlying.approve(address(gateway), params.amount);
+
+        (uint256 accAmountInBefore,) = gateway.getProofData(
+            params.receiver, //
+            0
+        );
+
+        vm.chainId(LINEA_CHAIN_ID);
+        uint256 mTokensBefore = market.balanceOf(params.receiver);
+        (uint256 claimedAmountBefore,) = market.getProofData(
+            params.receiver, //
+            ETHEREUM_CHAIN_ID
+        );
+        uint256 exchangeRate_host = market.exchangeRateStored();
 
         // User supplies underlying asset on the extension chain
         vm.prank(params.user);
@@ -126,8 +140,10 @@ contract CrossChainIntegrationTest is CrossChainTest {
 
         // Get state before the host chain transaction
         uint256 mTokensBefore = market.balanceOf(params.receiver);
-        (uint256 claimedAmountBefore,) =
-            market.getProofData(params.receiver, uint32(block.chainid));
+        (uint256 claimedAmountBefore,) = market.getProofData(
+            params.receiver, //
+            ETHEREUM_CHAIN_ID
+        );
 
         // Sequencer observes the event and creates the batch message for the host chain
         BatchSubmitter.BatchProcessMsg memory batchMsg = createBatchMsg(params);
@@ -142,8 +158,10 @@ contract CrossChainIntegrationTest is CrossChainTest {
 
         // Get state after the host chain transaction
         uint256 mTokensAfter = market.balanceOf(params.receiver);
-        (uint256 claimedAmountAfter,) =
-            market.getProofData(params.receiver, ETHEREUM_CHAIN_ID);
+        (uint256 claimedAmountAfter,) = market.getProofData(
+            params.receiver, //
+            ETHEREUM_CHAIN_ID
+        );
 
         assertTrue(
             mTokensAfter > mTokensBefore,
