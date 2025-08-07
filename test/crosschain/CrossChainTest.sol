@@ -111,5 +111,6 @@ contract CrossChainTest is MaldaTest {
         });
 
         market = deployMarket(marketParams);
+        marketUnderlying = AssetMock(payable(market.underlying()));
     }
 }
