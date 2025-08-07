@@ -23,13 +23,19 @@ pragma solidity =0.8.28;
 |_|_|_|__|__|_____|____/|__|__|
 */
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {Initializable} from
+    "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {OwnableUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from
+    "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {ImToken} from "src/interfaces/ImToken.sol";
 import {ExponentialNoError} from "src/utils/ExponentialNoError.sol";
-import {IRewardDistributor, IRewardDistributorData} from "src/interfaces/IRewardDistributor.sol";
+import {
+    IRewardDistributor,
+    IRewardDistributorData
+} from "src/interfaces/IRewardDistributor.sol";
 
 contract RewardDistributor is
     IRewardDistributor,
@@ -49,11 +55,15 @@ contract RewardDistributor is
     /**
      * @notice The Reward state for each reward token for each market
      */
-    mapping(address => mapping(address => IRewardDistributorData.RewardMarketState)) public rewardMarketState;
+    mapping(
+        address => mapping(address => IRewardDistributorData.RewardMarketState)
+    ) public rewardMarketState;
     /**
      * @notice The Reward state for each reward token for each account
      */
-    mapping(address => mapping(address => IRewardDistributorData.RewardAccountState)) public rewardAccountState;
+    mapping(
+        address => mapping(address => IRewardDistributorData.RewardAccountState)
+    ) public rewardAccountState;
 
     /**
      * @notice Added reward tokens
@@ -106,7 +116,12 @@ contract RewardDistributor is
     /**
      * @inheritdoc IRewardDistributor
      */
-    function getRewardTokens() public view override returns (address[] memory) {
+    function getRewardTokens()
+        public
+        view
+        override
+        returns (address[] memory)
+    {
         return rewardTokens;
     }
 
@@ -123,7 +138,10 @@ contract RewardDistributor is
 
     function whitelistToken(address rewardToken_) public onlyOwner {
         require(rewardToken_ != address(0), RewardDistributor_AddressNotValid());
-        require(!isRewardToken[rewardToken_], RewardDistributor_AddressAlreadyRegistered());
+        require(
+            !isRewardToken[rewardToken_],
+            RewardDistributor_AddressAlreadyRegistered()
+        );
 
         rewardTokens.push(rewardToken_);
         isRewardToken[rewardToken_] = true;
@@ -136,13 +154,24 @@ contract RewardDistributor is
         address[] memory mTokens,
         uint256[] memory supplySpeeds,
         uint256[] memory borrowSpeeds
-    ) public onlyOwner {
+    )
+        public
+        onlyOwner
+    {
         require(isRewardToken[rewardToken_], RewardDistributor_RewardNotValid());
-        require(mTokens.length == supplySpeeds.length, RewardDistributor_SupplySpeedArrayLengthMismatch());
-        require(mTokens.length == borrowSpeeds.length, RewardDistributor_BorrowSpeedArrayLengthMismatch());
+        require(
+            mTokens.length == supplySpeeds.length,
+            RewardDistributor_SupplySpeedArrayLengthMismatch()
+        );
+        require(
+            mTokens.length == borrowSpeeds.length,
+            RewardDistributor_BorrowSpeedArrayLengthMismatch()
+        );
 
         for (uint256 i = 0; i < mTokens.length;) {
-            _updateRewardSpeed(rewardToken_, mTokens[i], supplySpeeds[i], borrowSpeeds[i]);
+            _updateRewardSpeed(
+                rewardToken_, mTokens[i], supplySpeeds[i], borrowSpeeds[i]
+            );
 
             unchecked {
                 ++i;
@@ -150,7 +179,14 @@ contract RewardDistributor is
         }
     }
 
-    function grantReward(address token, address user, uint256 amount) public onlyOwner {
+    function grantReward(
+        address token,
+        address user,
+        uint256 amount
+    )
+        public
+        onlyOwner
+    {
         require(isRewardToken[token], RewardDistributor_RewardNotValid());
         _grantReward(token, user, amount);
     }
@@ -187,7 +223,14 @@ contract RewardDistributor is
     /**
      * @inheritdoc IRewardDistributor
      */
-    function notifySupplier(address mToken, address supplier) external override onlyOperator {
+    function notifySupplier(
+        address mToken,
+        address supplier
+    )
+        external
+        override
+        onlyOperator
+    {
         for (uint256 i = 0; i < rewardTokens.length;) {
             _notifySupplier(rewardTokens[i], mToken, supplier);
 
@@ -200,7 +243,14 @@ contract RewardDistributor is
     /**
      * @inheritdoc IRewardDistributor
      */
-    function notifyBorrower(address mToken, address borrower) external override onlyOperator {
+    function notifyBorrower(
+        address mToken,
+        address borrower
+    )
+        external
+        override
+        onlyOperator
+    {
         for (uint256 i = 0; i < rewardTokens.length;) {
             _notifyBorrower(rewardTokens[i], mToken, borrower);
 
@@ -211,10 +261,16 @@ contract RewardDistributor is
     }
 
     // ----------- PRIVATE ------------
-    function _updateRewardSpeed(address rewardToken, address mToken, uint256 supplySpeed, uint256 borrowSpeed)
+    function _updateRewardSpeed(
+        address rewardToken,
+        address mToken,
+        uint256 supplySpeed,
+        uint256 borrowSpeed
+    )
         private
     {
-        IRewardDistributorData.RewardMarketState storage marketState = rewardMarketState[rewardToken][mToken];
+        IRewardDistributorData.RewardMarketState storage marketState =
+            rewardMarketState[rewardToken][mToken];
 
         if (marketState.supplySpeed != supplySpeed) {
             if (marketState.supplyIndex == 0) {
@@ -240,7 +296,8 @@ contract RewardDistributor is
     }
 
     function _notifySupplyIndex(address rewardToken, address mToken) private {
-        IRewardDistributorData.RewardMarketState storage marketState = rewardMarketState[rewardToken][mToken];
+        IRewardDistributorData.RewardMarketState storage marketState =
+            rewardMarketState[rewardToken][mToken];
 
         uint32 blockTimestamp = getBlockTimestamp();
 
@@ -249,9 +306,12 @@ contract RewardDistributor is
                 uint256 deltaBlocks = blockTimestamp - marketState.supplyBlock;
                 uint256 supplyTokens = ImToken(mToken).totalSupply();
                 uint256 accrued = mul_(deltaBlocks, marketState.supplySpeed);
-                Double memory ratio = supplyTokens > 0 ? fraction(accrued, supplyTokens) : Double({mantissa: 0});
+                Double memory ratio = supplyTokens > 0
+                    ? fraction(accrued, supplyTokens)
+                    : Double({mantissa: 0});
                 marketState.supplyIndex = safe224(
-                    add_(Double({mantissa: marketState.supplyIndex}), ratio).mantissa,
+                    add_(Double({mantissa: marketState.supplyIndex}), ratio)
+                        .mantissa,
                     "new index exceeds 224 bits" // needs to be a string
                 );
             }
@@ -261,20 +321,26 @@ contract RewardDistributor is
     }
 
     function _notifyBorrowIndex(address rewardToken, address mToken) private {
-        Exp memory marketBorrowIndex = Exp({mantissa: ImToken(mToken).borrowIndex()});
+        Exp memory marketBorrowIndex =
+            Exp({mantissa: ImToken(mToken).borrowIndex()});
 
-        IRewardDistributorData.RewardMarketState storage marketState = rewardMarketState[rewardToken][mToken];
+        IRewardDistributorData.RewardMarketState storage marketState =
+            rewardMarketState[rewardToken][mToken];
 
         uint32 blockTimestamp = getBlockTimestamp();
 
         if (blockTimestamp > marketState.borrowBlock) {
             if (marketState.borrowSpeed > 0) {
                 uint256 deltaBlocks = blockTimestamp - marketState.borrowBlock;
-                uint256 borrowAmount = div_(ImToken(mToken).totalBorrows(), marketBorrowIndex);
+                uint256 borrowAmount =
+                    div_(ImToken(mToken).totalBorrows(), marketBorrowIndex);
                 uint256 accrued = mul_(deltaBlocks, marketState.borrowSpeed);
-                Double memory ratio = borrowAmount > 0 ? fraction(accrued, borrowAmount) : Double({mantissa: 0});
+                Double memory ratio = borrowAmount > 0
+                    ? fraction(accrued, borrowAmount)
+                    : Double({mantissa: 0});
                 marketState.borrowIndex = safe224(
-                    add_(Double({mantissa: marketState.borrowIndex}), ratio).mantissa,
+                    add_(Double({mantissa: marketState.borrowIndex}), ratio)
+                        .mantissa,
                     "new index exceeds 224 bits" // needs to be a string
                 );
             }
@@ -283,9 +349,17 @@ contract RewardDistributor is
         }
     }
 
-    function _notifySupplier(address rewardToken, address mToken, address supplier) private {
-        IRewardDistributorData.RewardMarketState storage marketState = rewardMarketState[rewardToken][mToken];
-        IRewardDistributorData.RewardAccountState storage accountState = rewardAccountState[rewardToken][supplier];
+    function _notifySupplier(
+        address rewardToken,
+        address mToken,
+        address supplier
+    )
+        private
+    {
+        IRewardDistributorData.RewardMarketState storage marketState =
+            rewardMarketState[rewardToken][mToken];
+        IRewardDistributorData.RewardAccountState storage accountState =
+            rewardAccountState[rewardToken][supplier];
 
         uint256 supplyIndex = marketState.supplyIndex;
         uint256 supplierIndex = accountState.supplierIndex[mToken];
@@ -298,23 +372,36 @@ contract RewardDistributor is
         }
 
         // Calculate change in the cumulative sum of the Reward per mToken accrued
-        Double memory deltaIndex = Double({mantissa: sub_(supplyIndex, supplierIndex)});
+        Double memory deltaIndex =
+            Double({mantissa: sub_(supplyIndex, supplierIndex)});
 
         uint256 supplierTokens = ImToken(mToken).balanceOf(supplier);
 
         // Calculate Reward accrued: mTokenAmount * accruedPerMToken
         uint256 supplierDelta = mul_(supplierTokens, deltaIndex);
 
-        accountState.rewardAccrued = add_(accountState.rewardAccrued, supplierDelta);
+        accountState.rewardAccrued =
+            add_(accountState.rewardAccrued, supplierDelta);
 
-        emit RewardAccrued(rewardToken, supplier, supplierDelta, accountState.rewardAccrued);
+        emit RewardAccrued(
+            rewardToken, supplier, supplierDelta, accountState.rewardAccrued
+        );
     }
 
-    function _notifyBorrower(address rewardToken, address mToken, address borrower) private {
-        Exp memory marketBorrowIndex = Exp({mantissa: ImToken(mToken).borrowIndex()});
+    function _notifyBorrower(
+        address rewardToken,
+        address mToken,
+        address borrower
+    )
+        private
+    {
+        Exp memory marketBorrowIndex =
+            Exp({mantissa: ImToken(mToken).borrowIndex()});
 
-        IRewardDistributorData.RewardMarketState storage marketState = rewardMarketState[rewardToken][mToken];
-        IRewardDistributorData.RewardAccountState storage accountState = rewardAccountState[rewardToken][borrower];
+        IRewardDistributorData.RewardMarketState storage marketState =
+            rewardMarketState[rewardToken][mToken];
+        IRewardDistributorData.RewardAccountState storage accountState =
+            rewardAccountState[rewardToken][borrower];
 
         uint256 borrowIndex = marketState.borrowIndex;
         uint256 borrowerIndex = accountState.borrowerIndex[mToken];
@@ -330,23 +417,32 @@ contract RewardDistributor is
         }
 
         // Calculate change in the cumulative sum of the Reward per borrowed unit accrued
-        Double memory deltaIndex = Double({mantissa: sub_(borrowIndex, borrowerIndex)});
+        Double memory deltaIndex =
+            Double({mantissa: sub_(borrowIndex, borrowerIndex)});
 
-        uint256 borrowerAmount = div_(ImToken(mToken).borrowBalanceStored(borrower), marketBorrowIndex);
+        uint256 borrowerAmount = div_(
+            ImToken(mToken).borrowBalanceStored(borrower), marketBorrowIndex
+        );
 
         // Calculate Reward accrued: mTokenAmount * accruedPerBorrowedUnit
         uint256 borrowerDelta = mul_(borrowerAmount, deltaIndex);
 
-        accountState.rewardAccrued = add_(accountState.rewardAccrued, borrowerDelta);
+        accountState.rewardAccrued =
+            add_(accountState.rewardAccrued, borrowerDelta);
 
-        emit RewardAccrued(rewardToken, borrower, borrowerDelta, accountState.rewardAccrued);
+        emit RewardAccrued(
+            rewardToken, borrower, borrowerDelta, accountState.rewardAccrued
+        );
     }
 
     function _claim(address rewardToken, address[] memory holders) internal {
         for (uint256 j = 0; j < holders.length;) {
-            IRewardDistributorData.RewardAccountState storage accountState = rewardAccountState[rewardToken][holders[j]];
+            IRewardDistributorData.RewardAccountState storage accountState =
+                rewardAccountState[rewardToken][holders[j]];
 
-            accountState.rewardAccrued = _grantReward(rewardToken, holders[j], accountState.rewardAccrued);
+            accountState.rewardAccrued = _grantReward(
+                rewardToken, holders[j], accountState.rewardAccrued
+            );
 
             unchecked {
                 ++j;
@@ -354,7 +450,14 @@ contract RewardDistributor is
         }
     }
 
-    function _grantReward(address token, address user, uint256 amount) internal returns (uint256) {
+    function _grantReward(
+        address token,
+        address user,
+        uint256 amount
+    )
+        internal
+        returns (uint256)
+    {
         uint256 remaining = ImToken(token).balanceOf(address(this));
         if (amount > 0 && amount <= remaining) {
             bool status = ImToken(token).transfer(user, amount);

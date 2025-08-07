@@ -84,10 +84,14 @@ contract JumpRateModelV4 is IInterestRateModel, Ownable {
         uint256 kink_,
         address owner_,
         string memory name_
-    ) Ownable(owner_) {
+    )
+        Ownable(owner_)
+    {
         blocksPerYear = blocksPerYear_;
         name = name_;
-        _updateJumpRateModel(baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink_);
+        _updateJumpRateModel(
+            baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink_
+        );
     }
 
     // ----------- OWNER ------------
@@ -104,8 +108,13 @@ contract JumpRateModelV4 is IInterestRateModel, Ownable {
         uint256 multiplierPerYear,
         uint256 jumpMultiplierPerYear,
         uint256 kink_
-    ) external onlyOwner {
-        _updateJumpRateModel(baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink_);
+    )
+        external
+        onlyOwner
+    {
+        _updateJumpRateModel(
+            baseRatePerYear, multiplierPerYear, jumpMultiplierPerYear, kink_
+        );
     }
 
     /**
@@ -127,7 +136,16 @@ contract JumpRateModelV4 is IInterestRateModel, Ownable {
     /**
      * @inheritdoc IInterestRateModel
      */
-    function utilizationRate(uint256 cash, uint256 borrows, uint256 reserves) public pure override returns (uint256) {
+    function utilizationRate(
+        uint256 cash,
+        uint256 borrows,
+        uint256 reserves
+    )
+        public
+        pure
+        override
+        returns (uint256)
+    {
         if (borrows == 0) {
             return 0;
         }
@@ -137,13 +155,23 @@ contract JumpRateModelV4 is IInterestRateModel, Ownable {
     /**
      * @inheritdoc IInterestRateModel
      */
-    function getBorrowRate(uint256 cash, uint256 borrows, uint256 reserves) public view override returns (uint256) {
+    function getBorrowRate(
+        uint256 cash,
+        uint256 borrows,
+        uint256 reserves
+    )
+        public
+        view
+        override
+        returns (uint256)
+    {
         uint256 util = utilizationRate(cash, borrows, reserves);
 
         if (util <= kink) {
             return util * multiplierPerBlock / 1e18 + baseRatePerBlock;
         } else {
-            uint256 normalRate = kink * multiplierPerBlock / 1e18 + baseRatePerBlock;
+            uint256 normalRate =
+                kink * multiplierPerBlock / 1e18 + baseRatePerBlock;
             uint256 excessUtil = util - kink;
             return excessUtil * jumpMultiplierPerBlock / 1e18 + normalRate;
         }
@@ -152,7 +180,12 @@ contract JumpRateModelV4 is IInterestRateModel, Ownable {
     /**
      * @inheritdoc IInterestRateModel
      */
-    function getSupplyRate(uint256 cash, uint256 borrows, uint256 reserves, uint256 reserveFactorMantissa)
+    function getSupplyRate(
+        uint256 cash,
+        uint256 borrows,
+        uint256 reserves,
+        uint256 reserveFactorMantissa
+    )
         external
         view
         override
@@ -177,12 +210,16 @@ contract JumpRateModelV4 is IInterestRateModel, Ownable {
         uint256 multiplierPerYear,
         uint256 jumpMultiplierPerYear,
         uint256 kink_
-    ) private {
+    )
+        private
+    {
         baseRatePerBlock = baseRatePerYear / blocksPerYear;
         multiplierPerBlock = multiplierPerYear * 1e18 / (blocksPerYear * kink_);
         jumpMultiplierPerBlock = jumpMultiplierPerYear / blocksPerYear;
         kink = kink_;
 
-        emit NewInterestParams(baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink);
+        emit NewInterestParams(
+            baseRatePerBlock, multiplierPerBlock, jumpMultiplierPerBlock, kink
+        );
     }
 }
