@@ -17,6 +17,8 @@ import {Operator} from "../src/Operator/Operator.sol";
 import {JumpRateModelV4} from "../src/interest/JumpRateModelV4.sol";
 import {mErc20Host} from "../src/mToken/host/mErc20Host.sol";
 import {RewardDistributor} from "../src/rewards/RewardDistributor.sol";
+import {ChainlinkFeedMock} from "./mocks/ChainlinkFeedMock.sol";
+import {MixedPriceOracleV4} from "../src/oracles/MixedPriceOracleV4.sol";
 
 // forgefmt: disable-end
 
@@ -404,5 +406,54 @@ contract MaldaTest is Test {
             address(params.rolesContract)
         );
         vm.label(address(newMarket), string.concat("m", params.symbol));
+    }
+
+    /// DEPLOY CHAINLINK FEED MOCK
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new ChainlinkFeedMock contract.
+     * @param label The label for Forge's vm.label.
+     * @param price The initial price for the feed.
+     * @return newFeedMock The newly deployed ChainlinkFeedMock instance.
+     */
+    function deployChainlinkFeedMock(
+        string memory label,
+        int256 price
+    )
+        internal
+        returns (ChainlinkFeedMock newFeedMock)
+    {
+        newFeedMock = new ChainlinkFeedMock(price);
+        vm.label(address(newFeedMock), label);
+    }
+
+    /// DEPLOY ORACLE
+    ////////////////////////////////////////////////////////////////
+
+    struct DeployOracleParams {
+        string label;
+        Roles rolesContract;
+        uint256 stalenessPeriod;
+        string[] symbols;
+        MixedPriceOracleV4.PriceConfig[] configs;
+    }
+
+    /**
+     * @notice Deploys a new MixedPriceOracleV4 contract.
+     * @param params A struct containing all necessary parameters for deployment.
+     * @return newOracle The newly deployed MixedPriceOracleV4 instance.
+     */
+    function deployOracle(DeployOracleParams memory params)
+        internal
+        returns (MixedPriceOracleV4 newOracle)
+    {
+        newOracle = new MixedPriceOracleV4(
+            params.symbols,
+            params.configs,
+            address(params.rolesContract),
+            params.stalenessPeriod
+        );
+        vm.label(address(newOracle), params.label);
     }
 }
