@@ -16,3 +16,7 @@ repomix-*
 # Invariants
 corpus
 coverage
+
+# debug
+call-trace.txt
+
