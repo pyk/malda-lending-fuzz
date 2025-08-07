@@ -13,7 +13,9 @@ import {
     Operator,
     JumpRateModelV4,
     BatchSubmitter,
-    ZkVerifier
+    ZkVerifier,
+    ChainlinkFeedMock,
+    MixedPriceOracleV4
 } from "../MaldaTest.sol";
 // forgefmt: disable-end
 
@@ -102,6 +104,10 @@ contract CrossChainTest is MaldaTest {
                 label: "HostRisc0VerifierMock"
             })
         });
+        ChainlinkFeedMock wethFeed = deployChainlinkFeedMock(
+            "WETHUSDFeed", //
+            3000 * 1e8
+        );
 
         DeployMarketParams memory marketParams = DeployMarketParams({
             symbol: "WETH",
@@ -122,6 +128,36 @@ contract CrossChainTest is MaldaTest {
             rolesContract: roles,
             zkVerifierContract: zkVerifier
         });
+
+        // Prepare configs for the MixedPriceOracleV4
+        string[] memory symbols = new string[](1);
+        symbols[0] = marketUnderlying.symbol();
+
+        MixedPriceOracleV4.PriceConfig[] memory configs =
+            new MixedPriceOracleV4.PriceConfig[](1);
+        configs[0] = MixedPriceOracleV4.PriceConfig({
+            api3Feed: address(wethFeed),
+            eOracleFeed: address(wethFeed),
+            toSymbol: "USD",
+            underlyingDecimals: 18 // WETH has 18 decimals
+        });
+
+        DeployOracleParams memory oracleParams = DeployOracleParams({
+            label: "HostOracle",
+            rolesContract: roles,
+            stalenessPeriod: 3600, // 1 hour
+            symbols: symbols,
+            configs: configs
+        });
+        MixedPriceOracleV4 oracle = deployOracle(oracleParams);
+
+        vm.startPrank(admin);
+        operator.setPriceOracle(address(oracle));
+        operator.supportMarket(address(market));
+        operator.setCollateralFactor(address(market), 810000000000000000); // 81% collateral factor
+        // operator.setCloseFactor(0.5e18); // 50% close factor
+        operator.setLiquidationIncentive(address(market), 1060000000000000000); // 6% liquidation incentive
+        vm.stopPrank();
 
         setupRoles(roles);
     }

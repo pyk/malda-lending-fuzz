@@ -122,6 +122,11 @@ contract CrossChainIntegrationTest is CrossChainTest {
             assert(false);
         }
 
+        // Get state before the host chain transaction
+        uint256 mTokensBefore = market.balanceOf(params.receiver);
+        (uint256 claimedAmountBefore,) =
+            market.getProofData(params.receiver, uint32(block.chainid));
+
         // Sequencer observes the event and creates the batch message for the host chain
         BatchSubmitter.BatchProcessMsg memory batchMsg = createBatchMsg(params);
 
@@ -131,6 +136,19 @@ contract CrossChainIntegrationTest is CrossChainTest {
             assert(false);
         }
 
-        // Assert here
+        // Get state after the host chain transaction
+        uint256 mTokensAfter = market.balanceOf(params.receiver);
+        (uint256 claimedAmountAfter,) =
+            market.getProofData(params.receiver, uint32(block.chainid));
+
+        assertTrue(
+            mTokensAfter > mTokensBefore,
+            "User did not receive mTokens on host chain"
+        );
+        assertEq(
+            claimedAmountAfter,
+            claimedAmountBefore + params.amount,
+            "Host chain did not update claimed amount correctly"
+        );
     }
 }
