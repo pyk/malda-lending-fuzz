@@ -7,7 +7,11 @@ import {
     Roles,
     AssetMock,
     mTokenGateway,
-    mErc20Host
+    mErc20Host,
+    Blacklister,
+    RewardDistributor,
+    Operator,
+    JumpRateModelV4
 } from "../MaldaTest.sol";
 // forgefmt: disable-end
 
@@ -62,11 +66,50 @@ contract CrossChainTest is MaldaTest {
     }
 
     function setupHostChain() private {
-        market = deployMarket({
+        Roles roles = deployRoles({label: "HostRoles", owner: admin});
+        Blacklister blacklister = deployBlacklister({
+            label: "HostBlacklister",
+            owner: admin,
+            rolesContract: roles
+        });
+        RewardDistributor rewardDistributor = deployRewardDistributor({
+            label: "HostRewardDistributor", //
+            owner: admin
+        });
+        Operator operator = deployOperator({
+            label: "HostOperator",
+            owner: admin,
+            rolesContract: roles,
+            blacklisterContract: blacklister,
+            rewardDistributorContract: rewardDistributor
+        });
+        JumpRateModelV4 interestRateModel = deployInterestRateModel({
+            label: "WETH_HostInterestRateModel",
+            owner: admin,
+            blocksPerYear: 31536000,
+            baseRatePerYear: 0,
+            multiplierPerYear: 22498715810630400,
+            jumpMultiplierPerYear: 4999999999974048000,
+            kink: 900000000000000000 // 90%
+        });
+
+        DeployMarketParams memory marketParams = DeployMarketParams({
             symbol: "WETH",
             decimals: 18,
             owner: admin,
-            operatorContract: deployOperator()
+            rolesContract: roles,
+            operatorContract: operator,
+            interestRateModelContract: interestRateModel,
+            zkVerifierContract: deployZkVerifier({
+                label: "HostZkVerifier",
+                owner: admin,
+                risc0VerifierContract: deployRisc0VerifierMock({
+                    label: "HostRisc0VerifierMock"
+                })
+            }),
+            initialExchangeRate: 2e16
         });
+
+        market = deployMarket(marketParams);
     }
 }
