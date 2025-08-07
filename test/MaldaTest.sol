@@ -16,6 +16,7 @@ import {BatchSubmitter} from "../src/mToken/BatchSubmitter.sol";
 import {Operator} from "../src/Operator/Operator.sol";
 import {JumpRateModelV4} from "../src/interest/JumpRateModelV4.sol";
 import {mErc20Host} from "../src/mToken/host/mErc20Host.sol";
+import {RewardDistributor} from "../src/rewards/RewardDistributor.sol";
 
 // forgefmt: disable-end
 
@@ -261,53 +262,147 @@ contract MaldaTest is Test {
         vm.label(address(newSubmitter), label);
     }
 
-    /// DEPLOY MARKET
+    /// DEPLOY REWARD DISTRIBUTOR
     ////////////////////////////////////////////////////////////////
 
     /**
-     * @notice Deploys a new mErc20Host market contract via an ERC1967 proxy.
-     * @param symbol The ERC-20 symbol of the underlying asset.
-     * @param decimals The ERC-20 decimals of the underlying asset and the mToken.
-     * @param owner The address to set as the contract's admin.
-     * @param operatorContract The Operator contract instance for dependency injection.
-     * @param interestRateModelContract The JumpRateModelV4 contract instance for dependency injection.
-     * @param initialExchangeRate The initial exchange rate mantissa for the market.
-     * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
+     * @notice Deploys a new RewardDistributor contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The address to set as the contract's owner.
+     * @return newDistributor The newly deployed RewardDistributor contract instance.
+     */
+    function deployRewardDistributor(
+        string memory label,
+        address owner
+    )
+        internal
+        returns (RewardDistributor newDistributor)
+    {
+        RewardDistributor implementation = new RewardDistributor();
+        address proxy = deployProxy(address(implementation));
+        newDistributor = RewardDistributor(proxy);
+        newDistributor.initialize(owner);
+        vm.label(address(newDistributor), label);
+    }
+
+    /// DEPLOY OPERATOR
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new Operator contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The address to set as the owner.
      * @param rolesContract The Roles contract instance for dependency injection.
+     * @param blacklisterContract The Blacklister contract instance for dependency injection.
+     * @param rewardDistributorContract The RewardDistributor contract instance for dependency injection.
+     * @return newOperator The newly deployed Operator contract instance.
+     */
+    function deployOperator(
+        string memory label,
+        address owner,
+        Roles rolesContract,
+        Blacklister blacklisterContract,
+        RewardDistributor rewardDistributorContract
+    )
+        internal
+        returns (Operator newOperator)
+    {
+        Operator implementation = new Operator();
+        address proxy = deployProxy(address(implementation));
+        newOperator = Operator(proxy);
+        newOperator.initialize({
+            _rolesOperator: address(rolesContract),
+            _blacklistOperator: address(blacklisterContract),
+            _rewardDistributor: address(rewardDistributorContract),
+            _admin: owner
+        });
+
+        vm.prank(owner);
+        rewardDistributorContract.setOperator(address(newOperator));
+
+        vm.label(address(newOperator), label);
+    }
+
+    /// DEPLOY INTEREST RATE MODEL
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new JumpRateModelV4 contract.
+     * @param label The label for Forge's vm.label.
+     * @param owner The owner of the contract.
+     * @param blocksPerYear The estimated number of blocks per year (or seconds, as per implementation).
+     * @param baseRatePerYear The base APR, scaled by 1e18.
+     * @param multiplierPerYear The rate increase in interest wrt utilization, scaled by 1e18.
+     * @param jumpMultiplierPerYear The multiplier per block after utilization point.
+     * @param kink The utilization point where the jump multiplier applies.
+     * @return newModel The newly deployed JumpRateModelV4 contract instance.
+     */
+    function deployInterestRateModel(
+        string memory label,
+        address owner,
+        uint256 blocksPerYear,
+        uint256 baseRatePerYear,
+        uint256 multiplierPerYear,
+        uint256 jumpMultiplierPerYear,
+        uint256 kink
+    )
+        internal
+        returns (JumpRateModelV4 newModel)
+    {
+        newModel = new JumpRateModelV4(
+            blocksPerYear,
+            baseRatePerYear,
+            multiplierPerYear,
+            jumpMultiplierPerYear,
+            kink,
+            owner,
+            label
+        );
+        vm.label(address(newModel), label);
+    }
+
+    /// DEPLOY MARKET
+    ////////////////////////////////////////////////////////////////
+
+    struct DeployMarketParams {
+        string symbol;
+        uint8 decimals;
+        address owner;
+        Roles rolesContract;
+        Operator operatorContract;
+        JumpRateModelV4 interestRateModelContract;
+        ZkVerifier zkVerifierContract;
+        uint256 initialExchangeRate;
+    }
+
+    /**
+     * @notice Deploys a new mErc20Host market contract via an ERC1967 proxy.
+     * @param params A struct containing all necessary parameters for deployment.
      * @return newMarket The newly deployed mErc20Host contract instance.
      */
-    function deployMarket(
-        string memory symbol,
-        uint8 decimals,
-        address owner,
-        Operator operatorContract,
-        JumpRateModelV4 interestRateModelContract,
-        uint256 initialExchangeRate,
-        ZkVerifier zkVerifierContract,
-        Roles rolesContract
-    )
+    function deployMarket(DeployMarketParams memory params)
         internal
         returns (mErc20Host newMarket)
     {
         AssetMock underlying = deployAssetMock({
-            label: string.concat(symbol, "Market"), //
-            decimals: decimals
+            label: string.concat(params.symbol, "MarketUnderlying"),
+            decimals: params.decimals
         });
         mErc20Host implementation = new mErc20Host();
         address proxy = deployProxy(address(implementation));
         newMarket = mErc20Host(proxy);
-        newMarket.initialize({
-            underlying_: address(underlying),
-            operator_: address(operatorContract),
-            interestRateModel_: address(interestRateModelContract),
-            initialExchangeRateMantissa_: initialExchangeRate,
-            name_: string.concat("m", symbol),
-            symbol_: string.concat("m", symbol),
-            decimals_: decimals,
-            admin_: payable(owner),
-            zkVerifier_: address(zkVerifierContract),
-            roles_: address(rolesContract)
-        });
-        vm.label(address(newMarket), string.concat("m", symbol));
+        newMarket.initialize(
+            address(underlying),
+            address(params.operatorContract),
+            address(params.interestRateModelContract),
+            params.initialExchangeRate,
+            string.concat("m", params.symbol),
+            string.concat("m", params.symbol),
+            params.decimals,
+            payable(params.owner),
+            address(params.zkVerifierContract),
+            address(params.rolesContract)
+        );
+        vm.label(address(newMarket), string.concat("m", params.symbol));
     }
 }
