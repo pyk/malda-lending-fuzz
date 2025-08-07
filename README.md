@@ -35,17 +35,17 @@ These properties are verified through end-to-end integration tests that simulate
 the full communication flow between the Host (`mErc20Host`) and Extension
 (`mTokenGateway`) chains.
 
-| ID   | Property                                                                                                                                                   | Approach                 | Result  |
-| :--- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------- | :------ |
-| CC01 | A deposit on an extension chain (`accAmountIn`) can be successfully claimed for mTokens on the host chain.                                                 | Foundry Integration Test | PASSED  |
-| CC02 | A withdrawal initiated on the host chain (`accAmountOut`) can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity. | Foundry Integration Test | PENDING |
+| ID   | Property                                                                                                                                  | Approach | Result  |
+| :--- | :---------------------------------------------------------------------------------------------------------------------------------------- | :------- | :------ |
+| CC01 | A deposit on an extension chain can be successfully claimed for mTokens on the host chain.                                                | Foundry  | PASSED  |
+| CC02 | A withdrawal initiated on the host chain can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity. | Foundry  | PENDING |
 
 - **CC01:** This property proves that the credit created on the extension chain
   (G01) is not just recorded correctly but is also functional and can be used to
   mint the corresponding mTokens on the host chain, completing the cross-chain
   supply operation.
 - **CC02:** This proves the reverse flow. A user who has burned mTokens on the
-  host to create a credit (`accAmountOut`) can successfully use a ZK proof to
-  claim their underlying assets on an extension chain. This test also implicitly
-  verifies the dependency on the Rebalancer by checking for expected reverts
-  when liquidity is insufficient.
+  host to create a credit can successfully use a ZK proof to claim their
+  underlying assets on an extension chain. This test also implicitly verifies
+  the dependency on the Rebalancer by checking for expected reverts when
+  liquidity is insufficient.
