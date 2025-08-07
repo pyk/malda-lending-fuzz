@@ -68,6 +68,7 @@ contract CrossChainTest is MaldaTest {
                 })
             }),
             gasFee: 0,
+            minSupplyAmount: 0.01 * 1e18,
             maxSupplyAmount: 100 * 1e18
         });
         gatewayUnderlying = AssetMock(payable(gateway.underlying()));

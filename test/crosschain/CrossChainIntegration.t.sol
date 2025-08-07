@@ -38,7 +38,11 @@ contract CrossChainIntegrationTest is CrossChainTest {
     {
         params.user = getRandomUser(fuzz.userId);
         params.receiver = getRandomUser(fuzz.receiverId);
-        params.amount = bound(fuzz.amount, 1, getMaxAmount(gateway));
+        params.amount = bound(
+            fuzz.amount,
+            getMinAmount(address(gateway)),
+            getMaxAmount(address(gateway))
+        );
 
         // bytes4[4] memory lineaSelectors = [
         //     mErc20Host.mintExternal.selector,
@@ -139,7 +143,7 @@ contract CrossChainIntegrationTest is CrossChainTest {
         // Get state after the host chain transaction
         uint256 mTokensAfter = market.balanceOf(params.receiver);
         (uint256 claimedAmountAfter,) =
-            market.getProofData(params.receiver, uint32(block.chainid));
+            market.getProofData(params.receiver, ETHEREUM_CHAIN_ID);
 
         assertTrue(
             mTokensAfter > mTokensBefore,
