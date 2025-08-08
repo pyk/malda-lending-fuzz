@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 // forgefmt: disable-start
-import {GatewayTest, mTokenGateway, AssetMock} from "./GatewayTest.sol";
-
+import {GatewayTest, mTokenGateway} from "./GatewayTest.sol";
+import {AssetMock} from "../mocks/AssetMock.sol";
 import {mTokenProofDecoderLib} from "../../src/libraries/mTokenProofDecoderLib.sol";
 // forgefmt: disable-end
 
@@ -13,18 +13,35 @@ contract GatewayInvariantTest is GatewayTest {
     /// GHOST VARIABLES
     ////////////////////////////////////////////////////////////////
 
-    // Tracks the total amount deposited by a user on a gateway.
+    /// @notice Tracks the total amount deposited by a user on a gateway.
     mapping(mTokenGateway gateway => mapping(address user => uint256 amount))
         amountIns;
 
-    // Tracks the total amount withdrawed by a user on a gateway.
+    /// @notice Tracks the total amount withdrawed by a user on a gateway.
     mapping(mTokenGateway gateway => mapping(address user => uint256 amount))
         amountOuts;
 
-    // Models the maximum cumulative credit proven from the host chain for a user's withdrawals.
-    // This value can only increase, simulating new proofs arriving.
+    /// @notice Models the maximum cumulative credit proven from the host chain
+    ///         for a user's withdrawals.
+    ///         This value can only increase, simulating new proofs arriving.
     mapping(mTokenGateway gateway => mapping(address user => uint256 amount))
-        public provenCreditOut;
+        public hostAmountOut;
+
+    /// @notice Tracks the total deposited amount
+    mapping(mTokenGateway gateway => uint256 amount) totalDeposited;
+
+    /// @notice Tracks the total withdrawn amount
+    mapping(mTokenGateway gateway => uint256 amount) totalWithdrawn;
+
+    /// @notice Represents a withdrawal request initiated on the host chain,
+    ///         pending claim on the extension chain.
+    struct PendingWithdrawal {
+        mTokenGateway gateway;
+        address user;
+        uint256 amount;
+    }
+
+    PendingWithdrawal[] pendingWithdrawals;
 
     function increaseAmountIn(
         mTokenGateway gateway,
@@ -68,17 +85,17 @@ contract GatewayInvariantTest is GatewayTest {
         amount = amountOuts[gateway][user];
     }
 
-    function increaseProvenCreditOut(
+    function increaseHostAmountOut(
         mTokenGateway gateway,
         address user,
         uint256 amount
     )
         private
     {
-        provenCreditOut[gateway][user] += amount;
+        hostAmountOut[gateway][user] += amount;
     }
 
-    function getProvenCreditOut(
+    function getHostAmountOut(
         mTokenGateway gateway,
         address user
     )
@@ -86,7 +103,52 @@ contract GatewayInvariantTest is GatewayTest {
         view
         returns (uint256 amount)
     {
-        amount = provenCreditOut[gateway][user];
+        amount = hostAmountOut[gateway][user];
+    }
+
+    function increaseTotalDeposited(
+        mTokenGateway gateway,
+        uint256 amount
+    )
+        private
+    {
+        totalDeposited[gateway] += amount;
+    }
+
+    function getTotalDeposited(mTokenGateway gateway)
+        private
+        view
+        returns (uint256 amount)
+    {
+        amount = totalDeposited[gateway];
+    }
+
+    function increaseTotalWithdrawn(
+        mTokenGateway gateway,
+        uint256 amount
+    )
+        private
+    {
+        totalWithdrawn[gateway] += amount;
+    }
+
+    function getTotalWithdrawn(mTokenGateway gateway)
+        private
+        view
+        returns (uint256 amount)
+    {
+        amount = totalWithdrawn[gateway];
+    }
+
+    function getRandomPendingWithdrawal(uint256 id)
+        private
+        view
+        returns (PendingWithdrawal memory p)
+    {
+        uint256 count = pendingWithdrawals.length;
+        if (count > 0) {
+            p = pendingWithdrawals[bound(id, 0, pendingWithdrawals.length - 1)];
+        }
     }
 
     /// SETUP
@@ -97,7 +159,7 @@ contract GatewayInvariantTest is GatewayTest {
         targetContract(address(this));
     }
 
-    /// FUZZ ACTIONS
+    /// SUPPLY ON HOST
     ////////////////////////////////////////////////////////////////
 
     struct SupplyOnHostFuzz {
@@ -151,27 +213,34 @@ contract GatewayInvariantTest is GatewayTest {
                 user: params.receiver,
                 amount: params.amount
             });
+            increaseTotalDeposited({
+                gateway: params.gateway,
+                amount: params.amount
+            });
         } catch {
             assert(false);
         }
     }
 
-    struct WithdrawExtensionCallFuzz {
+    /// CREATE PENDING WITHDRAWAL
+    ////////////////////////////////////////////////////////////////
+
+    struct CreatePendingWithdrawalFuzz {
         uint256 gatewayId;
         uint256 userId;
         uint256 amount;
     }
 
-    struct WithdrawExtensionCallParams {
+    struct CreatePendingWithdrawalParams {
         mTokenGateway gateway;
         address user;
         uint256 amount;
     }
 
-    function bind(WithdrawExtensionCallFuzz memory fuzz)
+    function bind(CreatePendingWithdrawalFuzz memory fuzz)
         internal
         view
-        returns (WithdrawExtensionCallParams memory params)
+        returns (CreatePendingWithdrawalParams memory params)
     {
         params.gateway = getRandomGateway(fuzz.gatewayId);
         params.user = getRandomUser(fuzz.userId);
@@ -182,64 +251,44 @@ contract GatewayInvariantTest is GatewayTest {
         );
     }
 
-    function withdrawExtensionCall(WithdrawExtensionCallFuzz memory fuzz)
+    function createPendingWithdrawal(CreatePendingWithdrawalFuzz memory fuzz)
         external
     {
-        WithdrawExtensionCallParams memory params = bind(fuzz);
-        increaseProvenCreditOut({
+        CreatePendingWithdrawalParams memory params = bind(fuzz);
+        increaseHostAmountOut({
             gateway: params.gateway,
             user: params.user,
             amount: params.amount
         });
-    }
-
-    struct BorrowExtensionCallFuzz {
-        uint256 gatewayId;
-        uint256 userId;
-        uint256 amount;
-    }
-
-    struct BorrowExtensionCallParams {
-        mTokenGateway gateway;
-        address user;
-        uint256 amount;
-    }
-
-    function bind(BorrowExtensionCallFuzz memory fuzz)
-        internal
-        view
-        returns (BorrowExtensionCallParams memory params)
-    {
-        params.gateway = getRandomGateway(fuzz.gatewayId);
-        params.user = getRandomUser(fuzz.userId);
-        params.amount = bound(
-            fuzz.amount, //
-            1,
-            getMaxAmount(address(params.gateway))
+        pendingWithdrawals.push(
+            PendingWithdrawal({
+                gateway: params.gateway,
+                user: params.user,
+                amount: params.amount
+            })
         );
     }
 
-    function borrowExtensionCall(BorrowExtensionCallFuzz memory fuzz)
-        external
-    {
-        BorrowExtensionCallParams memory params = bind(fuzz);
-        increaseProvenCreditOut({
-            gateway: params.gateway,
-            user: params.user,
-            amount: params.amount
-        });
+    /// EXECUTE PENDING WITHDRAWAL
+    ////////////////////////////////////////////////////////////////
+
+    struct ExecutePendingWithdrawalFuzz {
+        uint256 pendingWithdrawalIndex;
+        // outHere params
+        uint256 receiverId;
+        uint256 outHereAmount;
+        // Journal content
+        bool l1Inclusion;
     }
 
-    struct OutHereFuzz {
-        uint256 gatewayId;
-        uint256 userId;
-        uint256 amount;
-    }
-
-    struct OutHereParams {
+    struct ExecutePendingWithdrawalParams {
+        // Withdrawal params
         mTokenGateway gateway;
         AssetMock asset;
-        address user;
+        address sender;
+        // Journal params
+        bool l1Inclusion;
+        // outHere params
         uint256 amount;
         bytes journalData;
         bytes seal;
@@ -247,63 +296,83 @@ contract GatewayInvariantTest is GatewayTest {
         address receiver;
     }
 
-    function bind(OutHereFuzz memory fuzz)
+    function bind(ExecutePendingWithdrawalFuzz memory fuzz)
         internal
         view
-        returns (OutHereParams memory params)
+        returns (ExecutePendingWithdrawalParams memory params)
     {
-        params.gateway = getRandomGateway(fuzz.gatewayId);
-        params.asset = AssetMock(payable(params.gateway.underlying()));
-        params.user = getRandomUser(fuzz.userId);
-
-        uint256 currentProvenCredit = getProvenCreditOut(
-            params.gateway, //
-            params.user
-        );
-        uint256 currentWithdrawnAmount =
-            params.gateway.accAmountOut(params.user);
-        uint256 availableToWithdraw =
-            currentProvenCredit - currentWithdrawnAmount;
-        if (availableToWithdraw > 0) {
-            params.amount = bound(fuzz.amount, 1, availableToWithdraw);
-        }
-
-        params.receiver = params.user;
-
-        bytes[] memory journals = new bytes[](1);
-        journals[0] = mTokenProofDecoderLib.encodeJournal({
-            sender: params.user,
-            market: address(params.gateway),
-            accAmountIn: 0, // Not relevant for this action
-            accAmountOut: currentProvenCredit,
-            chainId: 59144, // Linea (Host)
-            dstChainId: uint32(block.chainid),
-            L1inclusion: false // Not checked by batch submitter
+        PendingWithdrawal memory w = getRandomPendingWithdrawal({
+            id: fuzz.pendingWithdrawalIndex //
         });
-        params.journalData = abi.encode(journals);
+        if (address(w.gateway) == address(0)) {
+            return params;
+        }
+        uint256 accAmountOut = getHostAmountOut(
+            params.gateway, //
+            params.sender
+        );
+
+        params.gateway = w.gateway;
+        params.asset = AssetMock(payable(params.gateway.underlying()));
+
+        params.sender = w.user;
+        params.l1Inclusion = fuzz.l1Inclusion;
+        params.journalData = createJournalData(params);
+        params.seal = "";
+        if (accAmountOut > 0) {
+            params.amount = bound(fuzz.outHereAmount, 1, accAmountOut);
+        }
 
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = params.amount;
         params.amounts = amounts;
+
+        params.receiver = getRandomUser(fuzz.receiverId);
     }
 
-    function skip(OutHereParams memory params) internal pure returns (bool) {
+    function skip(ExecutePendingWithdrawalParams memory params)
+        private
+        pure
+        returns (bool)
+    {
+        if (address(params.gateway) == address(0)) {
+            return true;
+        }
         if (params.amount == 0) {
             return true;
         }
-
         return false;
     }
 
-    function outHere(OutHereFuzz memory fuzz) external {
-        OutHereParams memory params = bind(fuzz);
+    function createJournalData(ExecutePendingWithdrawalParams memory params)
+        internal
+        view
+        returns (bytes memory journalData)
+    {
+        uint256 accAmountOut = getHostAmountOut(
+            params.gateway, //
+            params.sender
+        );
+        bytes[] memory journals = new bytes[](1);
+        journals[0] = mTokenProofDecoderLib.encodeJournal({
+            sender: params.sender,
+            market: address(params.gateway),
+            accAmountIn: 0, // Not relevant for this action
+            accAmountOut: accAmountOut,
+            chainId: LINEA_CHAIN_ID, // Linea (Host)
+            dstChainId: uint32(block.chainid),
+            L1inclusion: params.l1Inclusion
+        });
+        journalData = abi.encode(journals);
+    }
 
+    function executePendingWithdrawal(ExecutePendingWithdrawalFuzz memory fuzz)
+        external
+    {
+        ExecutePendingWithdrawalParams memory params = bind(fuzz);
         if (skip(params)) {
             return;
         }
-
-        // Assuming liquidity is enough
-        params.asset.mint(address(params.gateway), params.amount);
 
         try params.gateway.outHere({
             journalData: params.journalData,
@@ -313,7 +382,11 @@ contract GatewayInvariantTest is GatewayTest {
         }) {
             increaseAmountOut({
                 gateway: params.gateway,
-                user: params.user,
+                user: params.receiver,
+                amount: params.amount
+            });
+            increaseTotalWithdrawn({
+                gateway: params.gateway,
                 amount: params.amount
             });
         } catch {
@@ -324,33 +397,26 @@ contract GatewayInvariantTest is GatewayTest {
     /// INVARIANTS
     ////////////////////////////////////////////////////////////////
 
-    function property_getProof(
-        mTokenGateway gateway,
-        address user
-    )
-        internal
-        view
-    {
-        uint256 actualAmountIn = getAmountIn({
-            gateway: gateway, //
-            user: user
-        });
-        uint256 actualAmountOut = getAmountOut({
-            gateway: gateway, //
-            user: user
-        });
-        (uint256 amountIn, uint256 amountOut) = gateway.getProofData(user, 0);
-        assertEq(actualAmountIn, amountIn, "accAmountIn invalid");
-        assertEq(actualAmountOut, amountOut, "accAmountOut invalid");
-    }
-
-    function invariant_gateway() external view {
+    /// @custom:property GW04
+    /// @dev The total underlying assets held by the gateway must equal
+    ///      the net of all deposits and withdrawals (user + rebalancer).
+    function invariant_gatewayFundConservation() external view {
         for (uint256 i = 0; i < gateways.length; i++) {
             mTokenGateway gateway = gateways[i];
-            for (uint256 j = 0; j < users.length; j++) {
-                address user = users[j];
-                property_getProof(gateway, user);
-            }
+            AssetMock asset = AssetMock(payable(gateway.underlying()));
+
+            uint256 expectedBalance =
+                getTotalDeposited(gateway) - getTotalWithdrawn(gateway);
+            uint256 actualBalance = asset.balanceOf(address(gateway));
+
+            assertEq(
+                actualBalance,
+                expectedBalance,
+                string.concat(
+                    "GW04: Conservation of Funds Violation for ",
+                    vm.toString(address(gateway))
+                )
+            );
         }
     }
 }
