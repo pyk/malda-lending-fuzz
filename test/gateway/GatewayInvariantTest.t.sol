@@ -126,7 +126,7 @@ contract GatewayInvariantTest is GatewayTest {
         params.amount = bound(
             fuzz.amount, //
             1,
-            getMaxAmount(params.gateway)
+            getMaxAmount(address(params.gateway))
         );
         params.receiver = getRandomUser(fuzz.receiverId);
     }
@@ -178,7 +178,7 @@ contract GatewayInvariantTest is GatewayTest {
         params.amount = bound(
             fuzz.amount, //
             1,
-            getMaxAmount(params.gateway)
+            getMaxAmount(address(params.gateway))
         );
     }
 
@@ -215,7 +215,7 @@ contract GatewayInvariantTest is GatewayTest {
         params.amount = bound(
             fuzz.amount, //
             1,
-            getMaxAmount(params.gateway)
+            getMaxAmount(address(params.gateway))
         );
     }
 
