@@ -397,6 +397,68 @@ contract GatewayInvariantTest is GatewayTest {
     /// INVARIANTS
     ////////////////////////////////////////////////////////////////
 
+    /// @custom:property GW01
+    /// @dev A user's total deposited amount, as tracked by the gateway
+    /// contract,
+    ///      must always equal the sum of all their successful supply actions.
+    function invariant_gatewaySupplyCredit() external view {
+        for (uint256 i = 0; i < gateways.length; i++) {
+            mTokenGateway gateway = gateways[i];
+            for (uint256 j = 0; j < users.length; j++) {
+                address user = users[j];
+
+                uint256 gatewayDeposited = gateway.accAmountIn(user);
+                uint256 actualDeposited = getAmountIn(gateway, user);
+
+                assertEq(
+                    gatewayDeposited,
+                    actualDeposited,
+                    string.concat(
+                        "GW01: Supply Credit Violation for user ",
+                        vm.toString(user)
+                    )
+                );
+            }
+        }
+    }
+
+    /// @custom:property GW02 & GW05
+    /// @dev A user's total withdrawn amount on the gateway must never exceed
+    ///      the total credit proven for them from the host chain. This prevents
+    ///      double-spends and ensures resilience to reordering.
+    function invariant_gatewayWithdrawalCredit() external view {
+        for (uint256 i = 0; i < gateways.length; i++) {
+            mTokenGateway gateway = gateways[i];
+            for (uint256 j = 0; j < users.length; j++) {
+                address user = users[j];
+
+                uint256 gatewayWithdrawn = gateway.accAmountOut(user);
+                uint256 actualWithdrawn = getAmountOut(gateway, user);
+                uint256 hostWithdrawn = getHostAmountOut(gateway, user);
+
+                // GW02
+                assertEq(
+                    gatewayWithdrawn,
+                    actualWithdrawn,
+                    string.concat(
+                        "Withdrawn Amount Mismatch: accAmountOut differs for user ",
+                        vm.toString(user)
+                    )
+                );
+
+                // GW05
+                assertLe(
+                    gatewayWithdrawn,
+                    hostWithdrawn,
+                    string.concat(
+                        "GW05: Withdrawal Exceeds Credit Violation for user ",
+                        vm.toString(user)
+                    )
+                );
+            }
+        }
+    }
+
     /// @custom:property GW04
     /// @dev The total underlying assets held by the gateway must equal
     ///      the net of all deposits and withdrawals (user + rebalancer).
