@@ -15,12 +15,11 @@ a combination of unit tests, invariant tests, and end-to-end integration tests.
 These properties are tested in isolation on the `mTokenGateway` contract that
 deployed on the Extension Chain to ensure its internal logic is sound.
 
-| ID   | Property                                                                                               | Approach | Result  |
-| :--- | :----------------------------------------------------------------------------------------------------- | :------- | :------ |
-| GW01 | A user's deposit via `supplyOnHost` must be correctly and additively reflected in their `accAmountIn`. | Foundry  | PASSED  |
-| GW02 | A user can only withdraw funds via `outHere` up to the total credit proven for them (`accAmountOut`).  | Foundry  | PASSED  |
-| GW03 | All state-changing functions are properly guarded by the `notPaused` modifier.                         | Foundry  | PENDING |
-| GW04 | Access control for administrative functions (e.g., `setGasFee`) is restricted to the owner.            | Foundry  | PENDING |
+| ID   | Property                                                                                               | Approach | Result                 |
+| :--- | :----------------------------------------------------------------------------------------------------- | :------- | :--------------------- |
+| GW01 | A user's deposit via `supplyOnHost` must be correctly and additively reflected in their `accAmountIn`. | Foundry  | PASSED                 |
+| GW02 | A user can only withdraw funds via `outHere` up to the total credit proven for them (`accAmountOut`).  | Foundry  | PASSED                 |
+| GW03 | Access control for administrative functions is restricted to the owner.                                | Manual   | [L01](/findings/01.md) |
 
 - **GW01**: Ensures that every deposit on an extension chain creates a
   verifiable credit that can later be used on the host chain. This prevents loss
