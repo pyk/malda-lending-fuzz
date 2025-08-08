@@ -25,6 +25,12 @@ import {MixedPriceOracleV4} from "../src/oracles/MixedPriceOracleV4.sol";
 /// @title MaldaTest
 /// @dev Base contract for unit, fuzz and invariant tests
 contract MaldaTest is Test {
+    /// CHAINS
+    ////////////////////////////////////////////////////////////////
+
+    uint32 internal constant ETHEREUM_CHAIN_ID = 1;
+    uint32 internal constant LINEA_CHAIN_ID = 59144;
+
     /// USERS
     ////////////////////////////////////////////////////////////////
 
@@ -113,7 +119,7 @@ contract MaldaTest is Test {
      * @notice Deploys a new Blacklister contract.
      * @param label The label for Forge's vm.label.
      * @param owner The address to set as the contract's owner.
-     * @param rolesContract The Roles contract instance for dependency injection.
+     * @param rolesContract The Roles contract instance.
      * @return newBlacklister The newly deployed Blacklister contract instance.
      */
     function deployBlacklister(
@@ -154,7 +160,7 @@ contract MaldaTest is Test {
      * @notice Deploys a new ZkVerifier contract.
      * @param label The label for Forge's vm.label.
      * @param owner The address to set as the contract's owner.
-     * @param risc0VerifierContract The Risc0VerifierMock contract instance for dependency injection.
+     * @param risc0VerifierContract The Risc0VerifierMock contract instance.
      * @return newZkVerifier The newly deployed ZkVerifier contract instance.
      */
     function deployZkVerifier(
@@ -198,12 +204,12 @@ contract MaldaTest is Test {
     ////////////////////////////////////////////////////////////////
 
     /**
-     * @notice Deploys a new mTokenGateway contract including its underlying asset.
-     * @param label The label for Forge's vm.label and the symbol of the underlying asset.
+     * @notice Deploys a new mTokenGateway contract including its underlying.
+     * @param label The label for vm.label and the symbol of the underlying.
      * @param owner The address to set as the contract's owner.
-     * @param rolesContract The Roles contract instance for dependency injection.
-     * @param blacklisterContract The Blacklister contract instance for dependency injection.
-     * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
+     * @param rolesContract The Roles contract instance.
+     * @param blacklisterContract The Blacklister contract instance.
+     * @param zkVerifierContract The ZkVerifier contract instance.
      * @param gasFee The minimum amount of ETH per supplyOnHost calls.
      * @param minSupplyAmount The min amount per supplyOnHost calls.
      * @param maxSupplyAmount The maximum amount per supplyOnHost calls.
@@ -254,8 +260,8 @@ contract MaldaTest is Test {
      * @notice Deploys a new BatchSubmitter contract.
      * @param label The label for Forge's vm.label.
      * @param owner The address to set as the owner.
-     * @param rolesContract The Roles contract instance for dependency injection.
-     * @param zkVerifierContract The ZkVerifier contract instance for dependency injection.
+     * @param rolesContract The Roles contract instance.
+     * @param zkVerifierContract The ZkVerifier contract instance.
      * @return newSubmitter The newly deployed BatchSubmitter contract instance.
      */
     function deployBatchSubmitter(
@@ -282,7 +288,7 @@ contract MaldaTest is Test {
      * @notice Deploys a new RewardDistributor contract.
      * @param label The label for Forge's vm.label.
      * @param owner The address to set as the contract's owner.
-     * @return newDistributor The newly deployed RewardDistributor contract instance.
+     * @return newDistributor The newly deployed RewardDistributor contract.
      */
     function deployRewardDistributor(
         string memory label,
@@ -305,9 +311,9 @@ contract MaldaTest is Test {
      * @notice Deploys a new Operator contract.
      * @param label The label for Forge's vm.label.
      * @param owner The address to set as the owner.
-     * @param rolesContract The Roles contract instance for dependency injection.
-     * @param blacklisterContract The Blacklister contract instance for dependency injection.
-     * @param rewardDistributorContract The RewardDistributor contract instance for dependency injection.
+     * @param rolesContract The Roles contract instance.
+     * @param blacklisterContract The Blacklister contract instance.
+     * @param rewardDistributorContract The RewardDistributor contract instance.
      * @return newOperator The newly deployed Operator contract instance.
      */
     function deployOperator(
@@ -343,10 +349,12 @@ contract MaldaTest is Test {
      * @notice Deploys a new JumpRateModelV4 contract.
      * @param label The label for Forge's vm.label.
      * @param owner The owner of the contract.
-     * @param blocksPerYear The estimated number of blocks per year (or seconds, as per implementation).
+     * @param blocksPerYear The estimated number of blocks per year.
      * @param baseRatePerYear The base APR, scaled by 1e18.
-     * @param multiplierPerYear The rate increase in interest wrt utilization, scaled by 1e18.
-     * @param jumpMultiplierPerYear The multiplier per block after utilization point.
+     * @param multiplierPerYear The rate increase in interest wrt utilization,
+     *        scaled by 1e18.
+     * @param jumpMultiplierPerYear The multiplier per block after utilization
+     *        point.
      * @param kink The utilization point where the jump multiplier applies.
      * @return newModel The newly deployed JumpRateModelV4 contract instance.
      */
@@ -390,7 +398,7 @@ contract MaldaTest is Test {
 
     /**
      * @notice Deploys a new mErc20Host market contract via an ERC1967 proxy.
-     * @param params A struct containing all necessary parameters for deployment.
+     * @param params A struct containing all parameters for deployment.
      * @return newMarket The newly deployed mErc20Host contract instance.
      */
     function deployMarket(DeployMarketParams memory params)
@@ -452,7 +460,7 @@ contract MaldaTest is Test {
 
     /**
      * @notice Deploys a new MixedPriceOracleV4 contract.
-     * @param params A struct containing all necessary parameters for deployment.
+     * @param params A struct containing all parameters for deployment.
      * @return newOracle The newly deployed MixedPriceOracleV4 instance.
      */
     function deployOracle(DeployOracleParams memory params)
