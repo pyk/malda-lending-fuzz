@@ -22,9 +22,6 @@ import {
 /// @title CrossChainTest
 /// @dev Base contract for unit, fuzz and invariant tests
 contract CrossChainTest is MaldaTest {
-    uint32 internal constant ETHEREUM_CHAIN_ID = 1;
-    uint32 internal constant LINEA_CHAIN_ID = 59144;
-
     /// CONTRACTS
     ////////////////////////////////////////////////////////////////
 
