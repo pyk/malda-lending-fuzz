@@ -394,6 +394,52 @@ contract GatewayInvariantTest is GatewayTest {
         }
     }
 
+    /// REBALANCER ACTIONS
+    ////////////////////////////////////////////////////////////////
+
+    function extractForRebalancing(
+        uint256 gatewayId,
+        uint256 amount
+    )
+        external
+    {
+        mTokenGateway gateway = getRandomGateway(gatewayId);
+        AssetMock asset = AssetMock(payable(gateway.underlying()));
+        uint256 balance = asset.balanceOf(address(gateway));
+        if (balance == 0) {
+            return;
+        }
+
+        amount = bound(amount, 1, balance);
+
+        vm.prank(rebalancer);
+        try gateway.extractForRebalancing(amount) {
+            increaseTotalWithdrawn({gateway: gateway, amount: amount});
+        } catch {
+            assert(false);
+        }
+    }
+
+    function depositForRebalancing(
+        uint256 gatewayId,
+        uint256 amount
+    )
+        external
+    {
+        mTokenGateway gateway = getRandomGateway(gatewayId);
+        AssetMock asset = AssetMock(payable(gateway.underlying()));
+        amount = bound(amount, 1, getMaxAmount(address(gateway)));
+
+        asset.mint(rebalancer, amount);
+
+        vm.prank(rebalancer);
+        try asset.transfer(address(gateway), amount) {
+            increaseTotalDeposited({gateway: gateway, amount: amount});
+        } catch {
+            assert(false);
+        }
+    }
+
     /// INVARIANTS
     ////////////////////////////////////////////////////////////////
 
@@ -441,7 +487,7 @@ contract GatewayInvariantTest is GatewayTest {
                     gatewayWithdrawn,
                     actualWithdrawn,
                     string.concat(
-                        "Withdrawn Amount Mismatch: accAmountOut differs for user ",
+                        "GW02: accAmountOut differs for user ",
                         vm.toString(user)
                     )
                 );
