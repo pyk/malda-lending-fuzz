@@ -6,7 +6,11 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 contract AssetMock is ERC20 {
     uint8 tokenDecimals;
 
-    constructor(string memory _name, string memory _symbol, uint8 _decimals)
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals
+    )
         ERC20(_name, _symbol)
     {
         tokenDecimals = _decimals;
