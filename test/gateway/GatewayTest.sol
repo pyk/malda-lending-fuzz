@@ -14,6 +14,8 @@ import {
 /// @title GatewayTest
 /// @dev Base contract for unit, fuzz and invariant tests
 contract GatewayTest is MaldaTest {
+    address rebalancer = makeAddr("rebalancer");
+
     /// CONTRACTS
     ////////////////////////////////////////////////////////////////
 
@@ -109,6 +111,11 @@ contract GatewayTest is MaldaTest {
         roles.allowFor(
             address(batchSubmitter), //
             roles.PROOF_BATCH_FORWARDER(),
+            true
+        );
+        roles.allowFor(
+            rebalancer, //
+            roles.REBALANCER(),
             true
         );
         vm.stopPrank();
