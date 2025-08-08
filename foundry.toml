@@ -9,6 +9,7 @@ names = true
 line_length = 80
 single_line_statement_blocks = "multi"
 multiline_func_header = "all"
+wrap_comments = true
 
 [fuzz]
 runs = 10000
