@@ -8,8 +8,7 @@ import {
     Risc0VerifierMock,
     ZkVerifier,
     BatchSubmitter,
-    mTokenGateway,
-    AssetMock
+    mTokenGateway
 } from "../MaldaTest.sol";
 
 /// @title GatewayTest
