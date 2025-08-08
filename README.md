@@ -23,6 +23,8 @@ deployed on the Extension Chain to ensure its internal logic is sound.
 | GW04 | The total amount of underlying assets held by the `mTokenGateway` contract must always equal the total amount supplied minus the total amount withdrawn, adjusted for any funds moved by the rebalancer. | Foundry       | PASSED                |
 | GW05 | The gateway's cumulative record of a user's withdrawals must never exceed the total cumulative credit proven for them from the host chain, ensuring state integrity over time against reordering.        | Foundry       | PASSED                |
 | GW06 | A specific ZK proof representing withdrawal credit must be atomically consumed. The gateway must prevent the same proof from being replayed to authorize multiple withdrawals.                           | Foundry       | PASSED                |
+| GW07 | Proof verification is mandatory for untrusted callers. The gateway must reject any withdrawal attempt from a regular user that is not backed by a cryptographically valid ZK proof.                      | Foundry       | PASSED                |
+| GW08 | The self-sequencing path is functional. A regular user can successfully withdraw funds by providing a cryptographically valid ZK proof, ensuring censorship resistance.                                  | Foundry       | PASSED                |
 
 ### Cross-Chain Interaction
 
