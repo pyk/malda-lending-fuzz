@@ -14,7 +14,16 @@ name = "fuzz_target_1"
 path = "fuzz_targets/fuzz_target_1.rs"
 test = false
 
+[[bin]]
+bench = false
+doc = false
+name = "sequencer_commitment"
+path = "fuzz_targets/sequencer_commitment.rs"
+test = false
+
 [dependencies]
+alloy-primitives = { workspace = true }
+arbitrary = { version = "1.4.1", features = ["derive"] }
 libfuzzer-sys = "0.4"
 malda_utils = { path = "../malda_utils" }
 
