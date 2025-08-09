@@ -1,0 +1,22 @@
+[package]
+name = "malda_utils"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+alloy-consensus = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-rlp = { workspace = true }
+alloy-sol-types = { workspace = true }
+ethereum_ssz = { workspace = true }
+ethereum_ssz_derive = { workspace = true }
+eyre = { workspace = true }
+hex = { workspace = true }
+k256 = { workspace = true }
+revm = { workspace = true }
+risc0-op-steel = { workspace = true }
+risc0-steel = { workspace = true }
+serde = { workspace = true }
+snap = { workspace = true }
+ssz_types = { workspace = true }
+
