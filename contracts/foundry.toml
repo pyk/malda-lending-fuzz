@@ -12,10 +12,10 @@ multiline_func_header = "all"
 wrap_comments = true
 
 [fuzz]
-runs = 10000
+runs = 100000
 
 [invariant]
-runs = 10000
+runs = 100000
 depth = 25
 fail_on_revert = true
 corpus_dir = "corpus"
