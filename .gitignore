@@ -22,3 +22,6 @@ call-trace*.txt
 
 # mac
 .DS_Store
+
+# Cargo
+target
