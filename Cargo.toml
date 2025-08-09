@@ -1,11 +1,12 @@
 [workspace]
 resolver = "3"
-members = ["fuzz", "malda_utils"]
+members = ["fuzz", "malda_rs", "malda_utils"]
 
 [workspace.package]
 version = "0.1.0"
 
 [workspace.dependencies]
+alloy = { version = "1.0", features = ["full"] }
 alloy-consensus = "1.0"
 alloy-primitives = { version = "1.0", default-features = false, features = [
   "rlp",
@@ -33,6 +34,7 @@ snap = "1"
 ssz_types = "0.11.0"
 
 [patch.crates-io]
+alloy = { git = "https://github.com/alloy-rs/alloy", tag = "v1.0.12" }
 alloy-consensus = { git = "https://github.com/alloy-rs/alloy", tag = "v1.0.12" }
 alloy-eips = { git = "https://github.com/alloy-rs/alloy", tag = "v1.0.12" }
 alloy-network = { git = "https://github.com/alloy-rs/alloy", tag = "v1.0.12" }
