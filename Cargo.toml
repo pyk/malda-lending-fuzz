@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["malda_utils"]
+members = ["fuzz", "malda_utils"]
 
 [workspace.package]
 version = "0.1.0"

@@ -1,0 +1,20 @@
+[package]
+name = "fuzz"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[[bin]]
+bench = false
+doc = false
+name = "fuzz_target_1"
+path = "fuzz_targets/fuzz_target_1.rs"
+test = false
+
+[dependencies]
+libfuzzer-sys = "0.4"
+malda_utils = { path = "../malda_utils" }
+
