@@ -10,13 +10,6 @@ cargo-fuzz = true
 [[bin]]
 bench = false
 doc = false
-name = "fuzz_target_1"
-path = "fuzz_targets/fuzz_target_1.rs"
-test = false
-
-[[bin]]
-bench = false
-doc = false
 name = "sequencer_commitment"
 path = "fuzz_targets/sequencer_commitment.rs"
 test = false
