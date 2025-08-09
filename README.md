@@ -32,9 +32,11 @@ These properties are verified through end-to-end integration tests that simulate
 the full communication flow between the Host (`mErc20Host`) and Extension
 (`mTokenGateway`) chains.
 
-| ID   | Property                                                                                                                                  | Approach      | Result                |
-| :--- | :---------------------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
-| CC01 | A deposit on an extension chain can be successfully claimed for mTokens on the host chain.                                                | Foundry       | PASSED                |
-| CC02 | A withdrawal initiated on the host chain can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity. | Foundry       | PASSED                |
-| CC03 | The `sender` field in a ZK proof's journal must be the `msg.sender` of the transaction that initiated the cross-chain action.             | Manual Review | PASSED                |
-| CC04 | A ZK proof must be bound to its intended destination market or gateway, and the target contract must enforce this binding.                | Manual Review | [02](/findings/02.md) |
+| ID   | Property                                                                                                                                                                     | Approach      | Result                |
+| :--- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
+| CC01 | A deposit on an extension chain can be successfully claimed for mTokens on the host chain.                                                                                   | Foundry       | PASSED                |
+| CC02 | A withdrawal initiated on the host chain can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity.                                    | Foundry       | PASSED                |
+| CC03 | The `sender` field in a ZK proof's journal must be the `msg.sender` of the transaction that initiated the cross-chain action.                                                | Manual Review | PASSED                |
+| CC04 | A ZK proof must be bound to its intended destination market or gateway, and the target contract must enforce this binding.                                                   | Manual Review | [02](/findings/02.md) |
+| CC05 | The off-chain ZK Coprocessor must be compatible with the state commitment architecture of every chain where the protocol is deployed to ensure proof generation is possible. | Manual Review | [03](/findings/03.md) |
+| CC06 | User funds suplied to an `mTokenGateway` must never become permanently locked due to the inability of the off-chain sequencer to generate a valid proof for that chain.      | Manual Review | [03](/findings/03.md) |
