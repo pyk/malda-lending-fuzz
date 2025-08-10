@@ -175,6 +175,38 @@ mod tests {
     }
 
     #[test]
+    fn test_signature_msg_domain_separation() {
+        let chain_id = 1;
+
+        // Test with empty data payload
+        let data_empty: Vec<u8> = vec![];
+        let sig_msg_empty = signature_msg(&data_empty, chain_id);
+        let payload_hash_empty = keccak256(&data_empty);
+        assert_ne!(
+            sig_msg_empty, payload_hash_empty,
+            "Domain separation failed for empty payload"
+        );
+
+        // Test with a common string
+        let data_hello = b"hello world".to_vec();
+        let sig_msg_hello = signature_msg(&data_hello, chain_id);
+        let payload_hash_hello = keccak256(&data_hello);
+        assert_ne!(
+            sig_msg_hello, payload_hash_hello,
+            "Domain separation failed for common string"
+        );
+
+        // Test with a 32-byte payload that could be a hash itself
+        let data_hash = B256::random();
+        let sig_msg_hash = signature_msg(data_hash.as_slice(), chain_id);
+        let payload_hash_hash = keccak256(data_hash.as_slice());
+        assert_ne!(
+            sig_msg_hash, payload_hash_hash,
+            "Domain separation failed for hash-like payload"
+        );
+    }
+
+    #[test]
     fn test_recover_signer() {
         // Test with a known public key and its corresponding address
         let signing_key = SigningKey::from_slice(
