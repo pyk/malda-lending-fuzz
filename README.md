@@ -52,4 +52,4 @@ program and the host logic that prepares its inputs.
 | ID   | Property                                                                                                                                            | Approach   | Result  |
 | :--- | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- | :------ |
 | ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.                     | Cargo Fuzz | PENDING |
-| ZK02 | A signature for a sequencer commitment must be unique to the Malda protocol and the specific chain, preventing cross-protocol/chain replay attacks. | Cargo      | PENDING |
+| ZK02 | A signature for a sequencer commitment must be unique to the Malda protocol and the specific chain, preventing cross-protocol/chain replay attacks. | Cargo      | PASSED  |
