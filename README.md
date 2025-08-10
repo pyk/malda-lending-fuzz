@@ -54,3 +54,4 @@ program and the host logic that prepares its inputs.
 | ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.           | CargoFuzz | PASSED |
 | ZK02 | The commitment hashing scheme MUST enforce domain separation to prevent a signature's repurposing across different protocols or contexts. | CargoTest | PASSED |
 | ZK03 | The commitment hash must be unique for each distinct (payload, chain_id) pair, preventing data collision and cross-chain replay attacks.  | CargoFuzz | PASSED |
+| ZK04 | The custom ABI encoding for journal data MUST safely handle integer truncation and correctly represent values across different types.     | CargoTest | PASSED |

@@ -12,10 +12,13 @@
 // This file contains code derived from or inspired by Risc0,
 // originally licensed under the Apache License 2.0. See LICENSE-RISC0
 // and the NOTICE file for original license terms and attributions.
-//! Types module containing core data structures and implementations for blockchain payload processing.
+
+//! Types module containing core data structures and implementations for
+//! blockchain payload processing.
 //!
-//! This module provides essential types and structures for handling blockchain execution payloads,
-//! sequencer commitments, and related blockchain data structures.
+//! This module provides essential types and structures for handling blockchain
+//! execution payloads, sequencer commitments, and related blockchain data
+//! structures.
 
 use alloy_sol_types::sol;
 
@@ -36,13 +39,14 @@ use std::{collections::BTreeMap, sync::LazyLock};
 
 pub type EthChainSpec = ChainSpec<SpecId>;
 
-pub static LINEA_MAINNET_CHAIN_SPEC: LazyLock<EthChainSpec> = LazyLock::new(|| ChainSpec {
-    chain_id: 59144,
-    forks: BTreeMap::from([
-        (SpecId::LONDON, ForkCondition::Block(1)),
-        (SpecId::LONDON, ForkCondition::Timestamp(1)),
-    ]),
-});
+pub static LINEA_MAINNET_CHAIN_SPEC: LazyLock<EthChainSpec> =
+    LazyLock::new(|| ChainSpec {
+        chain_id: 59144,
+        forks: BTreeMap::from([
+            (SpecId::LONDON, ForkCondition::Block(1)),
+            (SpecId::LONDON, ForkCondition::Timestamp(1)),
+        ]),
+    });
 
 pub struct TakeLastXBytes(pub usize);
 
@@ -86,7 +90,8 @@ pub mod abi {
 
                 let to_skip = local_res.len() - (to_take.0 / 8);
 
-                let local_res = local_res.into_iter().skip(to_skip).collect::<Vec<u8>>();
+                let local_res =
+                    local_res.into_iter().skip(to_skip).collect::<Vec<u8>>();
                 res.extend(local_res);
             }
         };
@@ -273,7 +278,8 @@ impl TryFrom<&SequencerCommitment> for ExecutionPayload {
     /// * `Result<Self>` - The converted payload or an error
     fn try_from(value: &SequencerCommitment) -> Result<Self> {
         let payload_bytes = &value.data[32..];
-        ssz::Decode::from_ssz_bytes(payload_bytes).map_err(|_| eyre::eyre!("decode failed"))
+        ssz::Decode::from_ssz_bytes(payload_bytes)
+            .map_err(|_| eyre::eyre!("decode failed"))
     }
 }
 
@@ -314,13 +320,15 @@ pub struct ExecutionPayload {
     pub blob_gas_used: u64,
     /// Excess blob gas in the block
     pub excess_blob_gas: u64,
-    /// Root of withdrawals - optional to match Go implementation for Bedrock, Canyon, Delta, Ecotone, Fjord, Granite, Holocene
+    /// Root of withdrawals - optional to match Go implementation for Bedrock,
+    /// Canyon, Delta, Ecotone, Fjord, Granite, Holocene
     pub withdrawals_root: B256,
 }
 
 /// Type alias for a transaction, represented as a variable-length byte list
 pub type Transaction = VariableList<u8, typenum::U1073741824>;
-/// Type alias for a logs bloom filter, represented as a fixed-length byte vector
+/// Type alias for a logs bloom filter, represented as a fixed-length byte
+/// vector
 pub type LogsBloom = FixedVector<u8, typenum::U256>;
 /// Type alias for extra data, represented as a variable-length byte list
 pub type ExtraData = VariableList<u8, typenum::U32>;
@@ -328,7 +336,8 @@ pub type ExtraData = VariableList<u8, typenum::U32>;
 /// Represents a withdrawal operation in the blockchain.
 ///
 /// Copied from https://docs.rs/alloy/latest/alloy/eips/eip4895/struct.Withdrawal.html
-/// which doesn't work as direct input due to mismatch between crate versions between alloy and ssz
+/// which doesn't work as direct input due to mismatch between crate versions
+/// between alloy and ssz
 #[derive(Clone, Debug, Encode, Decode, RlpEncodable)]
 pub struct Withdrawal {
     /// Sequential index of the withdrawal
@@ -339,4 +348,49 @@ pub struct Withdrawal {
     address: Address,
     /// Amount being withdrawn
     amount: u64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_number_with_shift_truncation() {
+        // Simulate a chain ID that is larger than a u32 can hold.
+        // This value is 2^32, which should be truncated to 0 when encoded as a
+        // u32.
+        let large_chain_id = U256::from(1) << 32;
+
+        let input = vec![SolidityDataType::NumberWithShift(
+            large_chain_id,
+            TakeLastXBytes(32),
+        )];
+
+        let (encoded_bytes, _) = abi::encode_packed(&input);
+
+        // A u32 is 4 bytes long.
+        assert_eq!(
+            encoded_bytes.len(),
+            4,
+            "Encoded output should be 4 bytes for a u32"
+        );
+
+        // The correct behavior is for the upper bits to be truncated, resulting
+        // in zero.
+        let expected_bytes = (0u32).to_be_bytes().to_vec();
+
+        assert_eq!(
+            encoded_bytes, expected_bytes,
+            "Truncation of a large chain ID did not result in zero"
+        );
+
+        // Test with u32::MAX
+        let max_u32 = U256::from(u32::MAX);
+        let input_max = vec![SolidityDataType::NumberWithShift(
+            max_u32,
+            TakeLastXBytes(32),
+        )];
+        let (encoded_max_bytes, _) = abi::encode_packed(&input_max);
+        assert_eq!(encoded_max_bytes, (u32::MAX).to_be_bytes().to_vec());
+    }
 }
