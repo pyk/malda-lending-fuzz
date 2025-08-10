@@ -174,6 +174,9 @@ mod tests {
         assert_ne!(msg1, msg2);
     }
 
+    // @property ZK02
+    // The commitment hashing scheme MUST enforce domain separation to prevent a
+    // signature's repurposing across different protocols or contexts.
     #[test]
     fn test_signature_msg_domain_separation() {
         let chain_id = 1;

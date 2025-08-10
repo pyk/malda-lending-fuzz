@@ -17,6 +17,9 @@ lazy_static::lazy_static! {
     static ref SEEN_HASHES: Mutex<HashMap<B256, FuzzInput>> = Mutex::new(HashMap::new());
 }
 
+// @property ZK03
+// The commitment hash must be unique for each distinct (payload, chain_id) pair,
+// preventing data collision and cross-chain replay attacks.
 fuzz_target!(|input: FuzzInput| {
     let hash = signature_msg(&input.payload, input.chain_id);
 
