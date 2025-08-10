@@ -49,7 +49,8 @@ These properties ensure the integrity and correctness of the off-chain ZK proof
 generation process. They focus on preventing vulnerabilities within the guest
 program and the host logic that prepares its inputs.
 
-| ID   | Property                                                                                                                                            | Approach   | Result  |
-| :--- | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- | :------ |
-| ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.                     | Cargo Fuzz | PENDING |
-| ZK02 | A signature for a sequencer commitment must be unique to the Malda protocol and the specific chain, preventing cross-protocol/chain replay attacks. | Cargo      | PASSED  |
+| ID   | Property                                                                                                                                  | Approach  | Result  |
+| :--- | :---------------------------------------------------------------------------------------------------------------------------------------- | :-------- | :------ |
+| ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.           | CargoFuzz | PENDING |
+| ZK02 | The commitment hashing scheme MUST enforce domain separation to prevent a signature's repurposing across different protocols or contexts. | CargoTest | PASSED  |
+| ZK03 | The commitment hash must be unique for each distinct (payload, chain_id) pair, preventing data collision and cross-chain replay attacks.  | CargoFuzz | PASSED  |
