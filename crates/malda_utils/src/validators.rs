@@ -937,3 +937,180 @@ pub fn validate_chain_length(
         "last hash doesnt correspond to verified hash"
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_mock_header(parent_hash: B256, number: u64) -> RlpHeader<Header> {
+        let header = Header {
+            parent_hash,
+            number,
+            // Non important fields
+            ommers_hash: B256::ZERO,
+            beneficiary: Address::ZERO,
+            state_root: B256::random(),
+            transactions_root: B256::random(),
+            receipts_root: B256::ZERO,
+            logs_bloom: Default::default(),
+            difficulty: Default::default(),
+            gas_limit: 0,
+            gas_used: 0,
+            timestamp: 0,
+            extra_data: Default::default(),
+            mix_hash: B256::ZERO,
+            nonce: Default::default(),
+            base_fee_per_gas: None,
+            withdrawals_root: None,
+            blob_gas_used: None,
+            excess_blob_gas: None,
+            parent_beacon_block_root: None,
+            requests_hash: None,
+        };
+
+        RlpHeader::new(header)
+    }
+
+    #[test]
+    #[should_panic(expected = "last hash doesnt correspond to verified hash")]
+    fn test_validate_chain_length_rejects_reorged_block() {
+        const REORG_PROTECTION_DEPTH_TEST: u64 = 3;
+        let chain_id = BASE_CHAIN_ID;
+        assert_eq!(
+            REORG_PROTECTION_DEPTH_BASE, 2,
+            "Test assumes a depth of 2; update if constant changes."
+        );
+
+        let historical_hash = B256::random();
+        let mut parent_hash = historical_hash;
+
+        let mut canonical_chain = Vec::new();
+        for i in 1..=REORG_PROTECTION_DEPTH_TEST {
+            let block = create_mock_header(parent_hash, i);
+            parent_hash = block.hash_slow();
+            canonical_chain.push(block);
+        }
+        for header in canonical_chain.iter() {
+            println!(
+                "block={} hash={} parent={}",
+                header.number,
+                header.hash_slow(),
+                header.parent_hash
+            );
+        }
+
+        // Block 2 is orphaned
+        let orphaned_block = create_mock_header(historical_hash, 2);
+        let orphaned_block_hash = orphaned_block.hash_slow();
+
+        assert_ne!(
+            orphaned_block_hash,
+            canonical_chain[1].hash_slow(),
+            "Orphan and canonical block hashes must differ"
+        );
+
+        validate_chain_length(
+            chain_id,
+            historical_hash,
+            &canonical_chain,
+            // Attacker wants to prove this orphaned state
+            orphaned_block_hash,
+        );
+
+        panic!("orhaned block validated ??");
+    }
+
+    #[test]
+    #[should_panic(expected = "chain length is less than reorg protection")]
+    fn test_validate_chain_length_rejects_empty_blocks_if_depth_required() {
+        let chain_id = BASE_CHAIN_ID;
+
+        let empty_chain: Vec<RlpHeader<Header>> = Vec::new();
+        let historical_hash = B256::random();
+        let current_hash = B256::random();
+
+        validate_chain_length(chain_id, historical_hash, &empty_chain, current_hash);
+
+        panic!("Empty block list was validated when depth > 0!");
+    }
+
+    #[test]
+    #[should_panic(expected = "blocks not hashlinked")]
+    fn test_validate_chain_length_rejects_broken_chain_link() {
+        let chain_id = BASE_CHAIN_ID;
+
+        let historical_hash = B256::random();
+        let mut broken_chain = Vec::new();
+
+        let block1 = create_mock_header(historical_hash, 1);
+        broken_chain.push(block1.clone());
+
+        let malicious_parent_hash = B256::random();
+        assert_ne!(malicious_parent_hash, block1.hash_slow());
+        let block2 = create_mock_header(malicious_parent_hash, 2);
+        broken_chain.push(block2.clone());
+
+        let mut parent_hash = block2.hash_slow();
+        for i in 3..=6 {
+            let block = create_mock_header(parent_hash, i);
+            parent_hash = block.hash_slow();
+            broken_chain.push(block);
+        }
+        let current_hash = parent_hash;
+
+        validate_chain_length(chain_id, historical_hash, &broken_chain, current_hash);
+
+        panic!("Chain with a broken link was validated!");
+    }
+
+    #[test]
+    #[should_panic(expected = "blocks not hashlinked")]
+    fn test_validate_chain_length_rejects_mismatched_historical_hash() {
+        let chain_id = BASE_CHAIN_ID;
+
+        let mut parent_hash = B256::random();
+        let correct_historical_hash = parent_hash;
+
+        let mut canonical_chain = Vec::new();
+        for i in 1..=7 {
+            let block = create_mock_header(parent_hash, i);
+            parent_hash = block.hash_slow();
+            canonical_chain.push(block);
+        }
+        let current_hash = parent_hash;
+
+        let random_historical_hash = B256::random();
+        assert_ne!(random_historical_hash, correct_historical_hash);
+
+        validate_chain_length(
+            chain_id,
+            random_historical_hash, // Attacker provides a fake starting point
+            &canonical_chain,
+            current_hash,
+        );
+
+        panic!("Chain with mismatched historical hash was validated!");
+    }
+
+    #[test]
+    #[should_panic(expected = "chain length is less than reorg protection")]
+    fn test_validate_chain_length_rejects_chain_too_short() {
+        let chain_id = BASE_CHAIN_ID; // Requires depth of 2
+
+        let historical_hash = B256::random();
+        let mut parent_hash = historical_hash;
+
+        let mut too_short_chain = Vec::new();
+        // Create a chain of length (depth - 1)
+        for i in 1..=REORG_PROTECTION_DEPTH_BASE - 1 {
+            let block = create_mock_header(parent_hash, i);
+            parent_hash = block.hash_slow();
+            too_short_chain.push(block);
+        }
+        let current_hash = parent_hash;
+
+        validate_chain_length(chain_id, historical_hash, &too_short_chain, current_hash);
+
+        panic!("Chain shorter than reorg depth was validated!");
+    }
+}

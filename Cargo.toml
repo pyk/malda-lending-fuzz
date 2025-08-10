@@ -9,6 +9,7 @@ version = "0.1.0"
 alloy = { version = "1.0", features = ["full"] }
 alloy-consensus = "1.0"
 alloy-primitives = { version = "1.0", default-features = false, features = [
+  "getrandom",
   "rlp",
   "serde",
   "std",
