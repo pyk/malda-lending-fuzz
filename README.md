@@ -40,8 +40,6 @@ the full communication flow between the Host (`mErc20Host`) and Extension
 | CC04 | A ZK proof must be bound to its intended destination market or gateway, and the target contract must enforce this binding.                                                   | Manual Review | [02](/findings/02.md) |
 | CC05 | The off-chain ZK Coprocessor must be compatible with the state commitment architecture of every chain where the protocol is deployed to ensure proof generation is possible. | Manual Review | [03](/findings/03.md) |
 | CC06 | User funds suplied to an `mTokenGateway` must never become permanently locked due to the inability of the off-chain sequencer to generate a valid proof for that chain.      | Manual Review | [03](/findings/03.md) |
-| CC07 | The off-chain ZK Coprocessor must use up-to-date network parameters, such as sequencer addresses, to successfully validate state commitments from live L2s.                  | Cargo         | PASSED                |
-| CC08 | The ZK Coprocessor shall not generate a valid proof for a state that never existed on the source chain.                                                                      | Cargo         | [05](/findings/05.md) |
 
 ### ZK Coprocessor
 
@@ -49,9 +47,11 @@ These properties ensure the integrity and correctness of the off-chain ZK proof
 generation process. They focus on preventing vulnerabilities within the guest
 program and the host logic that prepares its inputs.
 
-| ID   | Property                                                                                                                                  | Approach  | Result |
-| :--- | :---------------------------------------------------------------------------------------------------------------------------------------- | :-------- | :----- |
-| ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.           | CargoFuzz | PASSED |
-| ZK02 | The commitment hashing scheme MUST enforce domain separation to prevent a signature's repurposing across different protocols or contexts. | CargoTest | PASSED |
-| ZK03 | The commitment hash must be unique for each distinct (payload, chain_id) pair, preventing data collision and cross-chain replay attacks.  | CargoFuzz | PASSED |
-| ZK04 | The custom ABI encoding for journal data MUST safely handle integer truncation and correctly represent values across different types.     | CargoTest | PASSED |
+| ID   | Property                                                                                                                                          | Approach      | Result |
+| :--- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :------------ | :----- |
+| ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.                   | CargoFuzz     | PASSED |
+| ZK02 | The commitment hashing scheme MUST enforce domain separation to prevent a signature's repurposing across different protocols or contexts.         | CargoTest     | PASSED |
+| ZK03 | The commitment hash must be unique for each distinct (payload, chain_id) pair, preventing data collision and cross-chain replay attacks.          | CargoFuzz     | PASSED |
+| ZK04 | The custom ABI encoding for journal data MUST safely handle integer truncation and correctly represent values across different types.             | CargoTest     | PASSED |
+| ZK05 | The ZK Coprocessor shall not generate a valid proof for a state that never existed on the source chain.                                           | Manual Review | PASSED |
+| ZK06 | The ZK Coprocessor must use up-to-date network parameters, such as sequencer addresses, to successfully validate state commitments from live L2s. | CargoTest     | PASSED |
