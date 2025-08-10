@@ -42,3 +42,14 @@ the full communication flow between the Host (`mErc20Host`) and Extension
 | CC06 | User funds suplied to an `mTokenGateway` must never become permanently locked due to the inability of the off-chain sequencer to generate a valid proof for that chain.      | Manual Review | [03](/findings/03.md) |
 | CC07 | The off-chain ZK Coprocessor must use up-to-date network parameters, such as sequencer addresses, to successfully validate state commitments from live L2s.                  | Cargo         | PASSED                |
 | CC08 | The ZK Coprocessor shall not generate a valid proof for a state that never existed on the source chain.                                                                      | Cargo         | [05](/findings/05.md) |
+
+### ZK Coprocessor
+
+These properties ensure the integrity and correctness of the off-chain ZK proof
+generation process. They focus on preventing vulnerabilities within the guest
+program and the host logic that prepares its inputs.
+
+| ID   | Property                                                                                                                                            | Approach   | Result  |
+| :--- | :-------------------------------------------------------------------------------------------------------------------------------------------------- | :--------- | :------ |
+| ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.                     | Cargo Fuzz | PENDING |
+| ZK02 | A signature for a sequencer commitment must be unique to the Malda protocol and the specific chain, preventing cross-protocol/chain replay attacks. | Cargo      | PENDING |
