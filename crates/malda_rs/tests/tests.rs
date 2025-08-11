@@ -17,13 +17,15 @@ mod tests {
     use alloy_primitives::{Address, address};
     use malda_rs::{constants::*, types::*, validators::*, viewcalls::*};
     use risc0_steel::{
-        ethereum::EthEvmEnv, host::BlockNumberOrTag as BlockRisc0, serde::RlpHeader,
+        ethereum::EthEvmEnv, host::BlockNumberOrTag as BlockRisc0,
+        serde::RlpHeader,
     };
 
     // Arbitrary values for testing
     const USER: Address = address!("Ad7f33984bed10518012013D4aB0458D37FEE6F3");
 
-    pub const WETH_MARKET_SEPOLIA: Address = address!("B84644c24B4D0823A0770ED698f7C20B88Bcf824");
+    pub const WETH_MARKET_SEPOLIA: Address =
+        address!("B84644c24B4D0823A0770ED698f7C20B88Bcf824");
 
     /// Tests Linea environment validation with correct input parameters
     ///
@@ -112,7 +114,10 @@ mod tests {
             .into_env(&LINEA_MAINNET_CHAIN_SPEC);
         assert!(
             std::panic::catch_unwind(|| {
-                validate_linea_env(LINEA_CHAIN_ID, &env.header().inner().clone());
+                validate_linea_env(
+                    LINEA_CHAIN_ID,
+                    &env.header().inner().clone(),
+                );
             })
             .is_err()
         );
@@ -183,7 +188,8 @@ mod tests {
         let (sequencer_commitment, block) =
             get_current_sequencer_commitment(OPTIMISM_CHAIN_ID, false).await;
 
-        let http_url: Url = get_rpc_url("OPTIMISM", false, false).parse().unwrap();
+        let http_url: Url =
+            get_rpc_url("OPTIMISM", false, false).parse().unwrap();
 
         let provider = ProviderBuilder::new().connect_http(http_url);
         let correct_hash = provider
@@ -194,7 +200,11 @@ mod tests {
             .header
             .hash;
 
-        validate_opstack_env(OPTIMISM_CHAIN_ID, &sequencer_commitment, correct_hash);
+        validate_opstack_env(
+            OPTIMISM_CHAIN_ID,
+            &sequencer_commitment,
+            correct_hash,
+        );
     }
 
     /// Tests OpStack environment validation with incorrect block hash
@@ -211,7 +221,8 @@ mod tests {
         let (sequencer_commitment, block) =
             get_current_sequencer_commitment(OPTIMISM_CHAIN_ID, false).await;
 
-        let http_url: Url = get_rpc_url("OPTIMISM", false, false).parse().unwrap();
+        let http_url: Url =
+            get_rpc_url("OPTIMISM", false, false).parse().unwrap();
 
         let provider = ProviderBuilder::new().connect_http(http_url);
 
@@ -226,7 +237,11 @@ mod tests {
 
         assert!(
             std::panic::catch_unwind(|| {
-                validate_opstack_env(OPTIMISM_CHAIN_ID, &sequencer_commitment, wrong_hash);
+                validate_opstack_env(
+                    OPTIMISM_CHAIN_ID,
+                    &sequencer_commitment,
+                    wrong_hash,
+                );
             })
             .is_err()
         );
@@ -246,7 +261,8 @@ mod tests {
         let (sequencer_commitment, block) =
             get_current_sequencer_commitment(OPTIMISM_CHAIN_ID, false).await;
 
-        let http_url: Url = get_rpc_url("OPTIMISM", false, false).parse().unwrap();
+        let http_url: Url =
+            get_rpc_url("OPTIMISM", false, false).parse().unwrap();
 
         let provider = ProviderBuilder::new().connect_http(http_url);
 
@@ -261,7 +277,11 @@ mod tests {
 
         assert!(
             std::panic::catch_unwind(|| {
-                validate_opstack_env(OPTIMISM_CHAIN_ID + 1, &sequencer_commitment, correct_hash);
+                validate_opstack_env(
+                    OPTIMISM_CHAIN_ID + 1,
+                    &sequencer_commitment,
+                    correct_hash,
+                );
             })
             .is_err()
         );
@@ -282,7 +302,8 @@ mod tests {
         let (sequencer_commitment, block) =
             get_current_sequencer_commitment(BASE_CHAIN_ID, false).await;
 
-        let http_url: Url = get_rpc_url("OPTIMISM", false, false).parse().unwrap();
+        let http_url: Url =
+            get_rpc_url("OPTIMISM", false, false).parse().unwrap();
 
         let provider = ProviderBuilder::new().connect_http(http_url);
 
@@ -297,7 +318,11 @@ mod tests {
 
         assert!(
             std::panic::catch_unwind(|| {
-                validate_opstack_env(OPTIMISM_CHAIN_ID, &sequencer_commitment, correct_hash);
+                validate_opstack_env(
+                    OPTIMISM_CHAIN_ID,
+                    &sequencer_commitment,
+                    correct_hash,
+                );
             })
             .is_err()
         );
@@ -321,12 +346,14 @@ mod tests {
             get_current_sequencer_commitment(BASE_CHAIN_ID, false).await;
 
         let mut manipulated_commitment_signature = sequencer_commitment.clone();
-        manipulated_commitment_signature.signature = wrong_sequencer_commitment.signature;
+        manipulated_commitment_signature.signature =
+            wrong_sequencer_commitment.signature;
 
         let mut manipulated_commitment_data = sequencer_commitment.clone();
         manipulated_commitment_data.data = wrong_sequencer_commitment.data;
 
-        let http_url: Url = get_rpc_url("OPTIMISM", false, false).parse().unwrap();
+        let http_url: Url =
+            get_rpc_url("OPTIMISM", false, false).parse().unwrap();
 
         let provider = ProviderBuilder::new().connect_http(http_url);
 
@@ -483,5 +510,63 @@ mod tests {
             .unwrap();
 
         println!("env={:#?}", env.header().number);
+    }
+
+    /// @custom:property ZK09 (PoC)
+    /// @dev Verifies that the top-level input preparation function,
+    ///      `get_proof_data_zkvm_input`, panics when attempting to perform
+    ///      L1 inclusion for a transaction originating from Ethereum mainnet.
+    ///      This confirms the logic bug makes the self-sequencing feature
+    ///      unusable for Ethereum.
+    #[tokio::test]
+    #[should_panic(
+        expected = "L1 Inclusion only supported for Optimism, Base, Linea and their Sepolia variants"
+    )]
+    async fn test_ethereum_l1_inclusion() {
+        let chain_id = ETHEREUM_CHAIN_ID;
+        let l1_inclusion = true;
+        let users = vec![USER];
+        let markets = vec![WETH_MARKET_SEPOLIA];
+        let target_chain_ids = vec![LINEA_CHAIN_ID];
+        let fallback = false;
+
+        get_proof_data_zkvm_input(
+            users,
+            markets,
+            target_chain_ids,
+            chain_id,
+            l1_inclusion,
+            fallback,
+        )
+        .await;
+    }
+
+    /// @custom:property ZK10 (PoC for Incorrect ChainSpec Bug)
+    /// @dev Verifies that the ZK Coprocessor panics due to an incorrect
+    ///      chain specification when preparing L1 inclusion proofs. This test
+    ///      triggers the code path where an Optimism block is validated
+    ///      against the Ethereum mainnet chain spec, which is incorrect.
+    #[tokio::test]
+    #[should_panic(
+        expected = "Failed to build EVM environment: computed block hash does not match the hash returned by the API"
+    )]
+    async fn test_incorrect_chain_spec() {
+        let chain_id = OPTIMISM_CHAIN_ID;
+        let l1_inclusion = true;
+
+        let users = vec![USER];
+        let markets = vec![WETH_MARKET_SEPOLIA];
+        let target_chain_ids = vec![LINEA_CHAIN_ID];
+        let fallback = false;
+
+        get_proof_data_zkvm_input(
+            users,
+            markets,
+            target_chain_ids,
+            chain_id,
+            l1_inclusion,
+            fallback,
+        )
+        .await;
     }
 }
