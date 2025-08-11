@@ -8,3 +8,14 @@ name = "get-proof-data"
 path = "src/get_proof_data.rs"
 
 [dependencies]
+alloy-consensus = { workspace = true }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { version = "1.0" }
+malda_utils = { path = "../malda_utils" }
+risc0-op-steel = { workspace = true }
+risc0-steel = { workspace = true }
+risc0-zkvm = { version = "2.3.1", default-features = false, features = [
+  "std",
+  "unstable",
+] }
+
