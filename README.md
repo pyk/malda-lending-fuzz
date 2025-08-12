@@ -15,16 +15,16 @@ a combination of unit tests, invariant tests, and end-to-end integration tests.
 These properties are tested in isolation on the `mTokenGateway` contract that
 deployed on the Extension Chain to ensure its internal logic is sound.
 
-| ID   | Property                                                                                                                                                                                                 | Approach      | Result                |
-| :--- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
-| GW01 | A user's deposit via `supplyOnHost` must be correctly and additively reflected in their `accAmountIn`.                                                                                                   | Foundry       | PASSED                |
-| GW02 | A user can only withdraw funds via `outHere` up to the total credit proven for them `accAmountOut`.                                                                                                      | Foundry       | PASSED                |
-| GW03 | Access control for administrative functions is restricted to the owner.                                                                                                                                  | Manual Review | [01](/findings/01.md) |
-| GW04 | The total amount of underlying assets held by the `mTokenGateway` contract must always equal the total amount supplied minus the total amount withdrawn, adjusted for any funds moved by the rebalancer. | Foundry       | PASSED                |
-| GW05 | The gateway's cumulative record of a user's withdrawals must never exceed the total cumulative credit proven for them from the host chain, ensuring state integrity over time against reordering.        | Foundry       | PASSED                |
-| GW06 | A specific ZK proof representing withdrawal must be atomically consumed. The gateway must prevent the same proof from being replayed to authorize multiple withdrawals.                                  | Foundry       | PASSED                |
-| GW07 | Proof verification is mandatory for untrusted callers. The gateway must reject any withdrawal attempt from a regular user that is not backed by a valid ZK proof.                                        | Foundry       | PASSED                |
-| GW08 | The self-sequencing path is functional. A regular user can successfully withdraw funds by providing a valid ZK proof.                                                                                    | Foundry       | PASSED                |
+| ID   | Property                                                                                                                                               | Approach      | Result                |
+| :--- | :----------------------------------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
+| GW01 | A user's deposit via `supplyOnHost` must be added to their `accAmountIn` balance.                                                                      | Foundry       | PASSED                |
+| GW02 | A user must not be able to withdraw funds via `outHere` exceeding their proven `accAmountOut`.                                                         | Foundry       | PASSED                |
+| GW03 | Administrative functions must only be callable by the contract owner.                                                                                  | Manual Review | [01](/findings/01.md) |
+| GW04 | The total underlying assets held by `mTokenGateway` must always equal the total supplied minus the total withdrawn, adjusted for rebalancer movements. | Foundry       | PASSED                |
+| GW05 | A user's cumulative recorded withdrawals must not exceed their total proven credit from the host chain.                                                | Foundry       | PASSED                |
+| GW06 | A ZK proof for a withdrawal must be consumed upon use and must not be replayable.                                                                      | Foundry       | PASSED                |
+| GW07 | Withdrawals from non-privileged users must be accompanied by a valid ZK proof.                                                                         | Foundry       | PASSED                |
+| GW08 | A user with a valid ZK proof must be able to successfully withdraw funds.                                                                              | Foundry       | PASSED                |
 
 ### Cross-Chain Interaction
 
@@ -32,14 +32,13 @@ These properties are verified through end-to-end integration tests that simulate
 the full communication flow between the Host (`mErc20Host`) and Extension
 (`mTokenGateway`) chains.
 
-| ID   | Property                                                                                                                                                                     | Approach      | Result                |
-| :--- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
-| CC01 | A deposit on an extension chain can be successfully claimed for mTokens on the host chain.                                                                                   | Foundry       | PASSED                |
-| CC02 | A withdrawal initiated on the host chain can be successfully claimed as underlying on the extension chain, assuming sufficient liquidity.                                    | Foundry       | PASSED                |
-| CC03 | The `sender` field in a ZK proof's journal must be the `msg.sender` of the transaction that initiated the cross-chain action.                                                | Manual Review | PASSED                |
-| CC04 | A ZK proof must be bound to its intended destination market or gateway, and the target contract must enforce this binding.                                                   | Manual Review | [02](/findings/02.md) |
-| CC05 | The off-chain ZK Coprocessor must be compatible with the state commitment architecture of every chain where the protocol is deployed to ensure proof generation is possible. | Manual Review | [03](/findings/03.md) |
-| CC06 | User funds suplied to an `mTokenGateway` must never become permanently locked due to the inability of the off-chain sequencer to generate a valid proof for that chain.      | Manual Review | [03](/findings/03.md) |
+| ID   | Property                                                                                                                      | Approach      | Result                |
+| :--- | :---------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
+| CC01 | A deposit on an extension chain must be claimable for mTokens on the host chain.                                              | Foundry       | PASSED                |
+| CC02 | A withdrawal from the host chain must be claimable on the extension chain, provided there is sufficient liquidity.            | Foundry       | PASSED                |
+| CC03 | The `sender` field in a ZK proof's journal must be the `msg.sender` of the transaction that initiated the cross-chain action. | Manual Review | PASSED                |
+| CC04 | The target contract must enforce that a ZK proof is bound to its intended destination market or gateway.                      | Manual Review | [02](/findings/02.md) |
+| CC05 | There must be a trustless mechanism for users to reclaim funds if the off-chain sequencer fails to generate a proof.          | Manual Review | [03](/findings/03.md) |
 
 ### ZK Coprocessor
 
@@ -49,13 +48,14 @@ program and the host logic that prepares its inputs.
 
 | ID   | Property                                                                                                                               | Approach      | Result                |
 | :--- | :------------------------------------------------------------------------------------------------------------------------------------- | :------------ | :-------------------- |
-| ZK01 | Serializing and deserializing a sequencer commitment must be a lossless process.                                                       | Cargo Fuzz    | PASSED                |
-| ZK02 | The commitment hashing scheme must enforce domain separation.                                                                          | Cargo Test    | PASSED                |
-| ZK03 | The commitment hash must be unique for each distinct `(payload, chain_id)` pair.                                                       | Cargo Fuzz    | PASSED                |
-| ZK04 | The custom ABI encoding for journal data must prevent silent integer truncation.                                                       | Cargo Test    | PASSED                |
-| ZK05 | The ZK Coprocessor must not generate a valid proof for a state that never existed on the source chain.                                 | Manual Review | [05](/findings/05.md) |
-| ZK06 | The ZK Coprocessor must use up-to-date network parameters.                                                                             | Cargo Test    | PASSED                |
-| ZK07 | The ZK Coprocessor must not consider a dispute game's resolution final until the entire delay period has passed.                       | Manual Review | [06](/findings/06.md) |
-| ZK08 | The self-sequencing mechanism must correctly process transactions from Ethereum, including proper handling of the `l1_inclusion` flag. | Cargo Test    | [07](/findings/07.md) |
-| ZK09 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating.                                               | Cargo Test    | [08](/findings/08.md) |
-| ZK10 | The self-sequencing mechanism for Linea transactions must operate only on L2 state that is finalized on Ethereum L1.                   | Cargo Test    | [09](/findings/09.md) |
+| ZK01 | The ZK Coprocessor must be compatible with the specifications of every chain on which the protocol is deployed.                        | Manual Review | [03](/findings/03.md) |
+| ZK02 | Serializing and deserializing a sequencer commitment must be a lossless process.                                                       | Cargo Fuzz    | PASSED                |
+| ZK03 | The commitment hashing scheme must enforce domain separation.                                                                          | Cargo Test    | PASSED                |
+| ZK04 | The commitment hash must be unique for each distinct `(payload, chain_id)` pair.                                                       | Cargo Fuzz    | PASSED                |
+| ZK05 | The custom ABI encoding for journal data must prevent silent integer truncation.                                                       | Cargo Test    | PASSED                |
+| ZK06 | The ZK Coprocessor must not generate a valid proof for a state that never existed on the source chain.                                 | Manual Review | [05](/findings/05.md) |
+| ZK07 | The ZK Coprocessor must use up-to-date network parameters.                                                                             | Cargo Test    | PASSED                |
+| ZK08 | The ZK Coprocessor must not consider a dispute game's resolution final until the entire delay period has passed.                       | Manual Review | [06](/findings/06.md) |
+| ZK09 | The self-sequencing mechanism must correctly process transactions from Ethereum, including proper handling of the `l1_inclusion` flag. | Cargo Test    | [07](/findings/07.md) |
+| ZK10 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating.                                               | Cargo Test    | [08](/findings/08.md) |
+| ZK11 | The self-sequencing mechanism for Linea transactions must operate only on L2 state that is finalized on Ethereum L1.                   | Cargo Test    | [09](/findings/09.md) |
