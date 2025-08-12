@@ -1217,25 +1217,6 @@ mod tests {
     use risc0_steel::{Account, ethereum::EthEvmEnv};
     use url::Url;
 
-    /// @custom:property ZK11
-    /// @dev This test verifies that `sort_and_verify_relevant_params` correctly
-    /// processes inputs for a Linea transaction requiring L1 inclusion.
-    ///
-    /// # Buggy Behavior
-    /// The current implementation incorrectly ignores the provided L1 Ethereum
-    /// environment (`env_input_eth_for_l1_inclusion`) when `chain_id` is
-    /// Linea and L1 inclusion is requested. It proceeds using the L2 Linea
-    /// environment (`env_input_for_viewcall`), which prevents
-    /// the subsequent L1 finality checks from working.
-    ///
-    /// # Expected Behavior
-    /// When L1 inclusion is true for Linea, the function should return the L1
-    /// environment as the primary `env_for_viewcall` and set
-    /// `chain_id_for_length_validation` to the L1 chain ID (Ethereum), as
-    /// these are required for the subsequent validation steps.
-    ///
-    /// This test will FAIL on the current codebase, proving the existence of
-    /// the bug.
     #[tokio::test]
     async fn test_sort_params_linea_l1_inclusion_bug() {
         let linea_rpc = Url::parse("https://rpc.linea.build").unwrap();
@@ -1307,5 +1288,24 @@ mod tests {
             expected_header_hash,
             "The returned `env_for_viewcall` should have been the L1 Ethereum environment, but it was not."
         );
+    }
+
+    async fn get_latest_linea_header() -> RlpHeader<Header> {
+        let rpc_url = "https://rpc.linea.build";
+        EthEvmEnv::builder()
+            .rpc(Url::parse(rpc_url).unwrap())
+            .chain_spec(&LINEA_MAINNET_CHAIN_SPEC)
+            .build()
+            .await
+            .unwrap()
+            .header()
+            .inner()
+            .clone()
+    }
+
+    #[tokio::test]
+    async fn test_zk12_valid_linea_signature_passes() {
+        let valid_header = get_latest_linea_header().await;
+        validate_linea_env(LINEA_CHAIN_ID, &valid_header);
     }
 }

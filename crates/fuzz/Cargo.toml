@@ -28,7 +28,15 @@ name = "signature_msg_collision"
 path = "src/signature_msg_collision.rs"
 test = false
 
+[[bin]]
+bench = false
+doc = false
+name = "validate_linea_env"
+path = "src/validate_linea_env.rs"
+test = false
+
 [dependencies]
+alloy-consensus = { workspace = true }
 alloy-primitives = { workspace = true }
 arbitrary = { version = "1.4.1", features = ["derive"] }
 k256 = { workspace = true }
@@ -36,5 +44,6 @@ lazy_static = "1.5.0"
 libfuzzer-sys = "0.4"
 malda_utils = { path = "../malda_utils" }
 rand = "0.9.2"
+risc0-steel = { workspace = true }
 snap = { workspace = true }
 
