@@ -59,3 +59,4 @@ program and the host logic that prepares its inputs.
 | ZK08 | The self-sequencing mechanism for Linea transactions must be based on L2 state that is verifiably finalized on Ethereum L1.                       | Manual Review | PASSED                |
 | ZK09 | The self-sequencing mechanism must be functional for transactions originating from Ethereum, correctly handling the required `l1_inclusion` flag. | Cargo Test    | [07](/findings/07.md) |
 | ZK10 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating and must not use a hardcoded or incorrect spec.           | Cargo Test    | [08](/findings/08.md) |
+| ZK11 | The self-sequencing mechanism for Linea transactions must be based on L2 state that is verifiably finalized on Ethereum L1.                       | Cargo Test    | [09](/findings/09.md) |

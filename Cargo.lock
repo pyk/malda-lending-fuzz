@@ -4713,6 +4713,7 @@ dependencies = [
  "snap",
  "ssz_types",
  "tokio",
+ "url",
 ]
 
 [[package]]

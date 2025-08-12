@@ -29,7 +29,7 @@ k256 = { version = "0.13.3", features = [
 ] }
 revm = { version = "25.0", default-features = false }
 risc0-op-steel = { git = "https://github.com/risc0/risc0-ethereum", tag = "v2.2.0" }
-risc0-steel = { git = "https://github.com/risc0/risc0-ethereum", tag = "v2.2.0" }
+risc0-steel = { features = ["host"], git = "https://github.com/risc0/risc0-ethereum", tag = "v2.2.0" }
 serde = { version = "1.0.143", features = ["derive"] }
 snap = "1"
 ssz_types = "0.11.0"
