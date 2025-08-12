@@ -50,13 +50,12 @@ program and the host logic that prepares its inputs.
 | ID   | Property                                                                                                                                          | Approach      | Result                |
 | :--- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :------------ | :-------------------- |
 | ZK01 | The process of serializing and deserializing a sequencer commitment must be lossless with respect to the original data payload.                   | Cargo Fuzz    | PASSED                |
-| ZK02 | The commitment hashing scheme MUST enforce domain separation to prevent a signature's repurposing across different protocols or contexts.         | Cargo Test    | PASSED                |
-| ZK03 | The commitment hash must be unique for each distinct (payload, chain_id) pair, preventing data collision and cross-chain replay attacks.          | Cargo Fuzz    | PASSED                |
-| ZK04 | The custom ABI encoding for journal data MUST safely handle integer truncation and correctly represent values across different types.             | Cargo Test    | PASSED                |
+| ZK02 | The commitment hashing scheme must enforce domain separation.                                                                                     | Cargo Test    | PASSED                |
+| ZK03 | The commitment hash must be unique for each distinct `(payload, chain_id)` pair.                                                                  | Cargo Fuzz    | PASSED                |
+| ZK04 | The custom ABI encoding for journal data must safely handle integer truncation.                                                                   | Cargo Test    | PASSED                |
 | ZK05 | The ZK Coprocessor shall not generate a valid proof for a state that never existed on the source chain.                                           | Manual Review | [05](/findings/05.md) |
-| ZK06 | The ZK Coprocessor must use up-to-date network parameters, such as sequencer addresses, to successfully validate state commitments from live L2s. | Cargo Test    | PASSED                |
+| ZK06 | The ZK Coprocessor must use up-to-date network parameters.                                                                                        | Cargo Test    | PASSED                |
 | ZK07 | The ZK Coprocessor must not consider a dispute game's resolution final until the entire delay period has passed.                                  | Manual Review | [06](/findings/06.md) |
-| ZK08 | The self-sequencing mechanism for Linea transactions must be based on L2 state that is verifiably finalized on Ethereum L1.                       | Manual Review | PASSED                |
-| ZK09 | The self-sequencing mechanism must be functional for transactions originating from Ethereum, correctly handling the required `l1_inclusion` flag. | Cargo Test    | [07](/findings/07.md) |
-| ZK10 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating and must not use a hardcoded or incorrect spec.           | Cargo Test    | [08](/findings/08.md) |
-| ZK11 | The self-sequencing mechanism for Linea transactions must be based on L2 state that is verifiably finalized on Ethereum L1.                       | Cargo Test    | [09](/findings/09.md) |
+| ZK08 | The self-sequencing mechanism must be functional for transactions originating from Ethereum, correctly handling the required `l1_inclusion` flag. | Cargo Test    | [07](/findings/07.md) |
+| ZK09 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating and must not use a hardcoded or incorrect spec.           | Cargo Test    | [08](/findings/08.md) |
+| ZK10 | The self-sequencing mechanism for Linea transactions must be based on L2 state that is finalized on Ethereum L1.                                  | Cargo Test    | [09](/findings/09.md) |
