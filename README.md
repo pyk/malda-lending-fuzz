@@ -85,11 +85,11 @@ program and the host logic that prepares its inputs.
 | ZK03 | The commitment hashing scheme must enforce domain separation.                                                                                  | Cargo Test    | PASSED                |
 | ZK04 | The commitment hash must be unique for each distinct `(payload, chain_id)` pair.                                                               | Cargo Fuzz    | PASSED                |
 | ZK05 | The custom ABI encoding for journal data must prevent silent integer truncation.                                                               | Cargo Test    | PASSED                |
-| ZK06 | The ZK Coprocessor must not generate a valid proof for a state that never existed on the source chain.                                         | Manual Review | [05](/findings/05.md) |
+| ZK06 | The ZK Coprocessor must not generate a valid proof for a state that never existed on the source chain.                                         | Manual Review | PASSED                |
 | ZK07 | The ZK Coprocessor must use up-to-date network parameters.                                                                                     | Cargo Test    | PASSED                |
 | ZK08 | The ZK Coprocessor must not consider a dispute game's resolution final until the entire delay period has passed.                               | Manual Review | [06](/findings/06.md) |
 | ZK09 | The self-sequencing mechanism must correctly process transactions from Ethereum, including proper handling of the `l1_inclusion` flag.         | Cargo Test    | [07](/findings/07.md) |
-| ZK10 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating.                                                       | Cargo Test    | [08](/findings/08.md) |
+| ZK10 | The ZK Coprocessor must use the correct chain specification for the L2 it is validating.                                                       | Cargo Test    | PASSED                |
 | ZK11 | The self-sequencing mechanism for Linea transactions must operate only on L2 state that is finalized on Ethereum L1.                           | Cargo Test    | [09](/findings/09.md) |
 | ZK12 | The ZK Coprocessor must verify that any Linea block header used in a `l1_inclusion=false` proof is signed by the canonical Linea sequencer.    | Manual Review | Passed                |
 | ZK13 | The ZK Coprocessor must ensure that a verified Linea block header is the tip of a chain of at least `REORG_PROTECTION_DEPTH_LINEA` blocks.     | Manual Review | Passed                |
