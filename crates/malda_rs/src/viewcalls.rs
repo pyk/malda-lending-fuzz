@@ -857,6 +857,13 @@ pub async fn get_proof_data_zkvm_input(
     l1_inclusion: bool,
     fallback: bool,
 ) -> Vec<u8> {
+    println!("=== get_proof_data_zkevm_input args");
+    println!("=== * users={:?}", users);
+    println!("=== * markets={:?}", markets);
+    println!("=== * target_chain_ids={:?}", target_chain_ids);
+    println!("=== * chain_id={}", chain_id);
+    println!("=== * l1_inclusion={}", l1_inclusion);
+    println!("=== * fallback={}", fallback);
     // Determine if the chain is a Sepolia testnet variant
     let is_sepolia = matches!(
         chain_id,
@@ -881,6 +888,7 @@ pub async fn get_proof_data_zkvm_input(
         )
         .await;
 
+    println!("get_l1block_call_inputs_and_l1_block_numbers START");
     // Prepare L1 block call inputs and block numbers if needed
     let (
         l1_block_call_input_1,
@@ -896,7 +904,9 @@ pub async fn get_proof_data_zkvm_input(
         fallback,
     )
     .await;
+    println!("get_l1block_call_inputs_and_l1_block_numbers END");
 
+    println!("get_env_input_for_l1_inclusion_and_l2_block_number START");
     // Prepare environment input for L1 inclusion and L2 block number
     let (env_input_l1_inclusion, l2_block_number_on_l1) =
         get_env_input_for_l1_inclusion_and_l2_block_number(
@@ -907,6 +917,7 @@ pub async fn get_proof_data_zkvm_input(
             fallback,
         )
         .await;
+    println!("get_env_input_for_l1_inclusion_and_l2_block_number END");
 
     // Determine the block number to use for linking blocks and proof data call
     // input
@@ -1012,6 +1023,12 @@ pub async fn get_env_input_for_l1_inclusion_and_l2_block_number(
     ethereum_block: Option<u64>,
     fallback: bool,
 ) -> (Option<EvmInput<EthEvmFactory>>, Option<u64>) {
+    println!("=== get_env_input_for_l1_inclusion_and_l2_block_number args");
+    println!("=== * chain_id={}", chain_id);
+    println!("=== * is_sepolia={:?}", is_sepolia);
+    println!("=== * l1_inclusion={}", l1_inclusion);
+    println!("=== * ethereum_block={:?}", ethereum_block);
+    println!("=== * fallback={}", fallback);
     if !l1_inclusion {
         // If L1 inclusion is not required, return None for both values
         (None, None)
@@ -1320,6 +1337,12 @@ pub async fn get_l1block_call_inputs_and_l1_block_numbers(
     Option<EvmInput<EthEvmFactory>>,
     Option<u64>,
 ) {
+    println!("=== get_l1block_call_inputs_and_l1_block_numbers args");
+    println!("=== * chain_id={}", chain_id);
+    println!("=== * is_sepolia={:?}", is_sepolia);
+    println!("=== * l1_inclusion={}", l1_inclusion);
+    println!("=== * block={:?}", block);
+    println!("=== * fallback={}", fallback);
     if is_ethereum_chain(chain_id) || l1_inclusion {
         // For Ethereum or L1 inclusion, prepare the L1 block call input for the
         // appropriate chain
@@ -1327,12 +1350,14 @@ pub async fn get_l1block_call_inputs_and_l1_block_numbers(
             true => (OPTIMISM_SEPOLIA_CHAIN_ID, BASE_SEPOLIA_CHAIN_ID),
             false => (OPTIMISM_CHAIN_ID, BASE_CHAIN_ID),
         };
+        println!("get_l1block_call_input START");
         let (l1_block_call_input_1, ethereum_block_1) = get_l1block_call_input(
             BlockNumberOrTag::Number(block.unwrap()),
             chain_id_1,
             fallback,
         )
         .await;
+        println!("get_l1block_call_input END");
         // NOTE: The following code is intended to enable L1 block confirmation
         // via both OP and Base for extra security, but is currently disabled
         // for latency reasons. Only the OP path is active.
@@ -1548,6 +1573,13 @@ pub async fn get_sequencer_commitments_and_blocks(
     Option<u64>,
     Option<SequencerCommitment>,
 ) {
+    println!("=== get_sequencer_commitments_and_blocks args");
+    println!("=== * chain_id={}", chain_id);
+    println!("=== * rpc_url={:?}", rpc_url);
+    println!("=== * is_sepolia={:?}", is_sepolia);
+    println!("=== * l1_inclusion={}", l1_inclusion);
+    println!("=== * fallback={}", fallback);
+
     if is_opstack_chain(chain_id)
         || is_ethereum_chain(chain_id)
         || (is_linea_chain(chain_id) && l1_inclusion)
@@ -1657,11 +1689,16 @@ pub async fn get_l1block_call_input(
     chain_id: u64,
     fallback: bool,
 ) -> (EvmInput<EthEvmFactory>, u64) {
-    println!("chain_id={}", chain_id);
+    println!("=== get_l1block_call_input args");
+    println!("=== * chain_id={}", chain_id);
+    println!("=== * block={:?}", block);
+    println!("=== * fallback={}", fallback);
     // Get the chain name and testnet status for the RPC URL
     let (chain_name, is_testnet) = get_chain_params(chain_id);
+    println!("=== * chain_name={:?}", chain_name);
+    println!("=== * is_testnet={:?}", is_testnet);
     let rpc_url = get_rpc_url(chain_name, fallback, is_testnet);
-    println!("rpc_url={}", rpc_url);
+    println!("=== * rpc_url={:?}", rpc_url);
     let mut env = EthEvmEnv::builder()
         .rpc(Url::parse(rpc_url).expect("Failed to parse RPC URL"))
         .block_number_or_tag(block)
@@ -2058,5 +2095,117 @@ mod tests {
         assert!(res.is_ok(), "ok");
 
         assert!(block_number > 0, "invalid block number");
+    }
+
+    #[tokio::test]
+    async fn test_get_proof_data_bug() {
+        let rpc_url = "https://mainnet.optimism.io";
+        // NOTE: the wrong rpc tenderly!
+        // let rpc_url = "https://optimism.gateway.tenderly.co";
+        EthEvmEnv::builder()
+            .rpc(Url::parse(rpc_url).expect("Failed to parse RPC URL"))
+            .block_number_or_tag(BlockNumberOrTag::Latest)
+            .chain_spec(&ETH_MAINNET_CHAIN_SPEC) // @audit always fails
+            .build()
+            .await
+            .expect("Failed to build EVM environment");
+    }
+
+    // /// @custom:property [property-id]
+    // /// @dev [property-description]
+    // #[tokio::test]
+    // #[should_panic(
+    //     expected = "L1 Inclusion only supported for Optimism, Base, Linea and
+    // their Sepolia variants" )]
+    // async fn test_zk09_ethereum() {
+    //     let users = Vec::from([Address::random()]);
+    //     let markets = Vec::from([Address::random()]);
+    //     let chain_id = ETHEREUM_CHAIN_ID;
+    //     let target_chain_ids = Vec::from([LINEA_CHAIN_ID]);
+    //     let l1_inclusion = false;
+    //     let fallback = false;
+
+    //     get_proof_data_zkvm_input(
+    //         users,
+    //         markets,
+    //         target_chain_ids,
+    //         chain_id,
+    //         l1_inclusion,
+    //         fallback,
+    //     )
+    //     .await;
+    // }
+
+    /// @custom:property ZK09
+    /// @dev [property-description]
+    #[tokio::test]
+    #[should_panic(
+        expected = "L1 Inclusion only supported for Optimism, Base, Linea and their Sepolia variants"
+    )]
+    async fn test_zk09_ethereum_l1_inclusion() {
+        let users = Vec::from([Address::random()]);
+        let markets = Vec::from([Address::random()]);
+        let chain_id = ETHEREUM_CHAIN_ID;
+        let target_chain_ids = Vec::from([LINEA_CHAIN_ID]);
+        let l1_inclusion = true;
+        let fallback = false;
+
+        // TODO(pyk): what happen when l1_inclusion=false?
+
+        get_proof_data_zkvm_input(
+            users,
+            markets,
+            target_chain_ids,
+            chain_id,
+            l1_inclusion,
+            fallback,
+        )
+        .await;
+    }
+
+    /// @custom:property ??
+    #[tokio::test]
+    async fn test_get_proof_data_zkvm_input() {
+        let users = Vec::from([Address::random()]);
+        let markets = Vec::from([Address::random()]);
+        let valid_chain_ids = Vec::from([
+            ETHEREUM_CHAIN_ID,
+            OPTIMISM_CHAIN_ID,
+            BASE_CHAIN_ID,
+            LINEA_CHAIN_ID,
+        ]);
+        let valid_target_chain_ids = valid_chain_ids.clone();
+        let valid_l1_inclusion = Vec::from([true, false]);
+        let valid_fallback = Vec::from([true, false]);
+
+        for &chain_id in &valid_chain_ids {
+            for &l1_inclusion in &valid_l1_inclusion {
+                for &fallback in &valid_fallback {
+                    println!("=== get_proof_data_zkevm_input calls");
+                    println!("=== * users={:?}", users);
+                    println!("=== * markets={:?}", markets);
+                    println!(
+                        "=== * target_chain_ids={:?}",
+                        valid_target_chain_ids
+                    );
+                    println!("=== * chain_id={}", chain_id);
+                    println!("=== * l1_inclusion={}", l1_inclusion);
+                    println!("=== * fallback={}", fallback);
+                    // if chain_id == ETHEREUM_CHAIN_ID && l1_inclusion == true
+                    // {     println!("Skipped due to known
+                    // bug");     continue;
+                    // }
+                    let _res = get_proof_data_zkvm_input(
+                        users.clone(),
+                        markets.clone(),
+                        valid_target_chain_ids.clone(),
+                        chain_id,
+                        l1_inclusion,
+                        fallback,
+                    )
+                    .await;
+                }
+            }
+        }
     }
 }
