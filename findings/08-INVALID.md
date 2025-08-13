@@ -1,20 +1,15 @@
-# ZK Coprocessor uses incorrect chain spec when preparing l1 inclusion proofs
+# get_l1block_call_input Uses Incorrect ChainSpec
 
 ## Summary
 
-ZK Coprocessor panics due to an incorrect chain specification when preparing L1
-inclusion proofs. This prevents users to do self-sequencing.
+`get_l1block_call_input` is used to retrieves L1 block information for L2
+chains. It queries the `L1Block` contract on L2 chains to get L1 block
+information. However, it incorrectly use `ETH_MAINNET_CHAIN_SPEC` causing the
+proof generation to fails.
 
 ## Root Cause
 
-When user calls `get_proof_data_prove` in the Malda SDK to generate a local
-proof. It execution then calls `get_proof_data_zkvm_input` function that
-orchestrates several calls. Crucially, it will call
-`get_l1block_call_inputs_and_l1_block_numbers`, which then calls
-`get_l1block_call_input` with `chain_id = OPTIMISM_CHAIN_ID`.
-
-Inside `get_l1block_call_input`, the code connects to an Optimism RPC but then
-tries to build the EVM environment using `ETH_MAINNET_CHAIN_SPEC`.
+The root cause is in the following function:
 
 ```rust
 pub async fn get_l1block_call_input(
@@ -22,13 +17,12 @@ pub async fn get_l1block_call_input(
     chain_id: u64,
     fallback: bool,
 ) -> (EvmInput<EthEvmFactory>, u64) {
-    // Get the chain name and testnet status for the RPC URL
     let (chain_name, is_testnet) = get_chain_params(chain_id);
     let rpc_url = get_rpc_url(chain_name, fallback, is_testnet);
     let mut env = EthEvmEnv::builder()
         .rpc(Url::parse(rpc_url).expect("Failed to parse RPC URL"))
         .block_number_or_tag(block)
-        .chain_spec(&ETH_MAINNET_CHAIN_SPEC) // @audit chain_id=10 most likely panic here
+        .chain_spec(&ETH_MAINNET_CHAIN_SPEC) // @audit always fails
         .build()
         .await
         .expect("Failed to build EVM environment");
@@ -37,10 +31,9 @@ pub async fn get_l1block_call_input(
 }
 ```
 
-This causes the `risc0-steel` library to compute a block hash using Ethereum's
-rules and compare it to the hash returned by the Optimism node. Since the rules
-differ, the hashes don't match, and the library panics with the exact message
-from your call trace.
+I have provided test case on the PoC section below on how both centralized
+sequencer (`l1_inclusion=false`) and self-sequencing (`l1_inclusion=true`) will
+always failed.
 
 ## Internal Pre-conditions
 
