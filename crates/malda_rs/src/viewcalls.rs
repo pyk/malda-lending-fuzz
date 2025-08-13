@@ -2037,3 +2037,26 @@ fn get_reorg_protection_depth(chain_id: u64) -> u64 {
         _ => panic!("invalid chain id"),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// @custom:property ZK07
+    #[tokio::test]
+    async fn test_sequencer_commitment_verification() {
+        let (commitment, block_number) =
+            get_current_sequencer_commitment(OPTIMISM_CHAIN_ID, false).await;
+
+        let res = commitment.verify(Address::random(), OPTIMISM_CHAIN_ID);
+        assert!(res.is_err(), "random signer should not marked as valid");
+
+        let res = commitment.verify(OPTIMISM_SEQUENCER, BASE_CHAIN_ID);
+        assert!(res.is_err(), "invalid chain id should not marked as valid");
+
+        let res = commitment.verify(OPTIMISM_SEQUENCER, OPTIMISM_CHAIN_ID);
+        assert!(res.is_ok(), "ok");
+
+        assert!(block_number > 0, "invalid block number");
+    }
+}

@@ -1,6 +1,8 @@
 use alloy_primitives::{Address, Bytes, Signature, U256};
 use malda_utils::{
-    constants::{BASE_CHAIN_ID, BASE_SEQUENCER, OPTIMISM_CHAIN_ID, OPTIMISM_SEQUENCER},
+    constants::{
+        BASE_CHAIN_ID, BASE_SEQUENCER, OPTIMISM_CHAIN_ID, OPTIMISM_SEQUENCER,
+    },
     types::SequencerCommitment,
 };
 use serde::Deserialize;
@@ -19,7 +21,11 @@ struct ApiSignature {
     y_parity: String,
 }
 
-async fn run_verification_test(url: &str, chain_id: u64, hardcoded_sequencer: Address) {
+async fn run_verification_test(
+    url: &str,
+    chain_id: u64,
+    hardcoded_sequencer: Address,
+) {
     let api_response: ApiResponse = reqwest::get(url)
         .await
         .expect(&format!("Failed to fetch data from {url}"))
@@ -27,8 +33,10 @@ async fn run_verification_test(url: &str, chain_id: u64, hardcoded_sequencer: Ad
         .await
         .expect("Failed to parse JSON response");
 
-    let data =
-        Bytes::from(hex::decode(&api_response.data[2..]).expect("Failed to decode data hex"));
+    let data = Bytes::from(
+        hex::decode(&api_response.data[2..])
+            .expect("Failed to decode data hex"),
+    );
     let r = U256::from_str_radix(&api_response.signature.r[2..], 16)
         .expect("Failed to parse R from hex");
     let s = U256::from_str_radix(&api_response.signature.s[2..], 16)
@@ -46,7 +54,7 @@ async fn run_verification_test(url: &str, chain_id: u64, hardcoded_sequencer: Ad
 }
 
 #[tokio::test]
-async fn poc_sequencer_addresses_are_outdated() {
+async fn test_sequencer_op_base() {
     run_verification_test(
         "https://base.operationsolarstorm.org/latest",
         BASE_CHAIN_ID,
