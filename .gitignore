@@ -25,3 +25,4 @@ call-trace*.txt
 
 # Cargo
 target
+rust_backtrace_*.txt
