@@ -33,6 +33,7 @@ contract MaldaTest is Test {
 
     uint32 internal constant ETHEREUM_CHAIN_ID = 1;
     uint32 internal constant LINEA_CHAIN_ID = 59144;
+    uint32 internal constant BASE_CHAIN_ID = 8453;
 
     /// USERS
     ////////////////////////////////////////////////////////////////
