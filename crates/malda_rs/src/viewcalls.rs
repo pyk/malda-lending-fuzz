@@ -876,7 +876,10 @@ pub async fn get_proof_data_zkvm_input(
     // Get the chain name and testnet status for RPC URL selection
     let (chain_name, is_testnet) = get_chain_params(chain_id);
     let rpc_url = get_rpc_url(chain_name, fallback, is_testnet);
+    println!("=== * chain_name={}", chain_name);
+    println!("=== * rpc_url={}", rpc_url);
 
+    println!("get_sequencer_commitments_and_blocks START");
     // Fetch sequencer commitments and block numbers for the chain
     let (block, commitment, block_2, commitment_2) =
         get_sequencer_commitments_and_blocks(
@@ -887,6 +890,7 @@ pub async fn get_proof_data_zkvm_input(
             fallback,
         )
         .await;
+    println!("get_sequencer_commitments_and_blocks END");
 
     println!("get_l1block_call_inputs_and_l1_block_numbers START");
     // Prepare L1 block call inputs and block numbers if needed
@@ -1608,6 +1612,7 @@ pub async fn get_sequencer_commitments_and_blocks(
             // sequencer commitment
             let (commitment, block) =
                 get_current_sequencer_commitment(chain_id, fallback).await;
+            println!("=== * block={:?}", block);
             (
                 Some(block),
                 Some(commitment),
@@ -1621,6 +1626,9 @@ pub async fn get_sequencer_commitments_and_blocks(
                 get_default_sequencer_chain(chain_id, is_sepolia);
             let (commitment, block) =
                 get_current_sequencer_commitment(default_chain, fallback).await;
+            println!("=== * default_chain={:?}", default_chain);
+            println!("=== * commitment={:?}", commitment);
+            println!("=== * block={:?}", block);
             (Some(block), Some(commitment), None, None)
         }
     } else if is_linea_chain(chain_id) {
@@ -1636,6 +1644,7 @@ pub async fn get_sequencer_commitments_and_blocks(
             .inner()
             .inner()
             .number;
+        println!("=== * block={:?}", block);
         (Some(block), None, None, None)
     } else {
         panic!("Invalid chain ID");
@@ -2100,6 +2109,8 @@ fn get_reorg_protection_depth(chain_id: u64) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Deref;
+
     use super::*;
 
     /// @custom:property ZK07
@@ -2181,7 +2192,6 @@ mod tests {
     // }
 
     /// @custom:property ZK09
-    /// @dev [property-description]
     #[tokio::test]
     #[should_panic(
         expected = "L1 Inclusion only supported for Optimism, Base, Linea and their Sepolia variants"
@@ -2205,6 +2215,58 @@ mod tests {
             fallback,
         )
         .await;
+    }
+
+    use risc0_steel::ethereum::EthEvmInput;
+
+    /// @custom:property ??
+    #[tokio::test]
+    async fn test_zkxx_optimism_l1_inclusion() {
+        let users = Vec::from([Address::random()]);
+        let markets = Vec::from([Address::random()]);
+        let chain_id = OPTIMISM_CHAIN_ID;
+        let target_chain_ids = Vec::from([LINEA_CHAIN_ID]);
+        let l1_inclusion = true;
+        let fallback = false;
+
+        let (_commitment, expected_block_number) =
+            get_current_sequencer_commitment(OPTIMISM_CHAIN_ID, false).await;
+
+        let input = get_proof_data_zkvm_input(
+            users,
+            markets,
+            target_chain_ids,
+            chain_id,
+            l1_inclusion,
+            fallback,
+        )
+        .await;
+
+        type Input = (
+            Option<EthEvmInput>,         // 0
+            u64,                         // 1: chain_id
+            Vec<Address>,                // 2: users
+            Vec<Address>,                // 3: markets
+            Vec<u64>,                    // 4: target_chain_ids
+            Option<SequencerCommitment>, // 5
+            Option<EthEvmInput>,         // 6
+            Vec<RlpHeader<Header>>,      // 7
+            Option<EthEvmInput>,         // 8
+            Option<OpEvmInput>,          // 9: The vulnerable L2 state proof!
+            Option<SequencerCommitment>, // 10
+            Option<EthEvmInput>,         // 11
+        );
+        let des: Input = risc0_zkvm::serde::from_slice(&input).expect("X");
+        let evm_input = des.9.expect("should not be none");
+        let block_number: u64 =
+            evm_input.into_env(&OP_MAINNET_CHAIN_SPEC).header().0.number;
+
+        assert!(
+            expected_block_number > block_number + 100_000_000,
+            "The block number used for the Optimism state proof ({}) is an L1 block number, not a recent L2 block number (around {}).",
+            block_number,
+            expected_block_number
+        );
     }
 
     /// @custom:property ??
@@ -2252,5 +2314,84 @@ mod tests {
                 }
             }
         }
+    }
+    type DecodedInput = (
+        Option<EthEvmInput>,         // 0: env_input
+        u64,                         // 1: chain_id
+        Vec<Address>,                // 2: account
+        Vec<Address>,                // 3: asset
+        Vec<u64>,                    // 4: target_chain_ids
+        Option<SequencerCommitment>, // 5: sequencer_commitment
+        Option<EthEvmInput>,         // 6: env_op_input
+        Vec<RlpHeader<Header>>,      // 7: linking_blocks
+        Option<EthEvmInput>,         // 8: env_eth_input
+        Option<OpEvmInput>,          // 9: op_evm_input
+        Option<SequencerCommitment>, // 10: sequencer_commitment_opstack_2
+        Option<EthEvmInput>,         // 11: env_op_input_2
+    );
+
+    fn decode_input(input: Vec<u8>) -> DecodedInput {
+        let des: DecodedInput =
+            risc0_zkvm::serde::from_slice(&input).expect("X");
+        return des;
+    }
+
+    fn validate_decoded_input_linea(decoded_input: DecodedInput) {
+        println!("=== validate_decode_input_linea");
+        let env_input = decoded_input.0;
+        let env_input_for_viewcall = env_input
+            .expect("env_input is None")
+            .into_env(&LINEA_MAINNET_CHAIN_SPEC);
+        println!("=== * env_input -> env_input_for_viewcall");
+        println!(
+            "=== * env_input_for_viewcall block_number = {:?}",
+            env_input_for_viewcall.header().number,
+        );
+        let chain_id = decoded_input.1;
+        println!("=== * chain_id={:?}", chain_id);
+        let account = decoded_input.2;
+        println!("=== * account={:?}", account);
+        let asset = decoded_input.3;
+        println!("=== * asset={:?}", asset);
+        let target_chain_ids = decoded_input.4;
+        println!("=== * target_chain_ids={:?}", target_chain_ids);
+        let sequencer_commitment = decoded_input.5;
+        println!("=== * sequencer_commitment={:?}", sequencer_commitment);
+        // when chain_id=linea and l1_inclusion=false, env_op_input is unused in
+        // the Guest program
+        // let env_op_input = decoded_input.6;
+
+        let linking_blocks = decoded_input.7;
+        println!("=== * linking_blocks={:?}", linking_blocks);
+    }
+
+    #[tokio::test]
+    async fn test_get_proof_data_zkvm_input_linea() {
+        let users = Vec::from([Address::random()]);
+        let markets = Vec::from([Address::random()]);
+        let target_chain_ids = Vec::from([ETHEREUM_CHAIN_ID]);
+        let chain_id = LINEA_CHAIN_ID;
+        let l1_inclusion = false;
+        let fallback = false;
+
+        println!("=== get_proof_data_zkevm_input linea ===");
+        println!("=== * users={:?}", users);
+        println!("=== * markets={:?}", markets);
+        println!("=== * target_chain_ids={:?}", target_chain_ids);
+        println!("=== * chain_id={}", chain_id);
+        println!("=== * l1_inclusion={}", l1_inclusion);
+        println!("=== * fallback={}", fallback);
+        let input = get_proof_data_zkvm_input(
+            users,
+            markets,
+            target_chain_ids,
+            chain_id,
+            l1_inclusion,
+            fallback,
+        )
+        .await;
+        let decoded_input = decode_input(input);
+        validate_decoded_input_linea(decoded_input);
+        println!("=== SUCCESS ===");
     }
 }
