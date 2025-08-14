@@ -59,7 +59,6 @@ mod tests {
         let target_chain_ids = decoded_input.4;
         println!("=== * target_chain_ids={:?}", target_chain_ids);
         let sequencer_commitment = decoded_input.5;
-        println!("=== * sequencer_commitment={:?}", sequencer_commitment);
         // when chain_id=linea and l1_inclusion=false, env_op_input is unused in
         // the Guest program
         // let env_op_input = decoded_input.6;
@@ -69,10 +68,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_linea_e2e() {
-        let users = Vec::from([Address::random()]);
+    async fn test_linea_e2e_non_l1_inclusion() {
+        let users = Vec::from([Address::random(), Address::random()]);
         let markets = Vec::from([MUSDC, MWETH]);
-        let target_chain_ids = Vec::from([ETHEREUM_CHAIN_ID]);
+        let target_chain_ids = Vec::from([ETHEREUM_CHAIN_ID, LINEA_CHAIN_ID]);
         let chain_id = LINEA_CHAIN_ID;
         let l1_inclusion = false;
         let fallback = false;
@@ -135,14 +134,80 @@ mod tests {
 
     #[tokio::test]
     async fn test_linea_e2e_l1_inclusion() {
-        let users = Vec::from([Address::random()]);
+        let users = Vec::from([Address::random(), Address::random()]);
         let markets = Vec::from([MUSDC, MWETH]);
-        let target_chain_ids = Vec::from([ETHEREUM_CHAIN_ID]);
+        let target_chain_ids =
+            Vec::from([ETHEREUM_CHAIN_ID, ETHEREUM_CHAIN_ID]);
         let chain_id = LINEA_CHAIN_ID;
         let l1_inclusion = true;
         let fallback = false;
 
         println!("=== LINEA E2E TEST ===");
+        println!("=== * users={:?}", users);
+        println!("=== * markets={:?}", markets);
+        println!("=== * target_chain_ids={:?}", target_chain_ids);
+        println!("=== * chain_id={}", chain_id);
+        println!("=== * l1_inclusion={}", l1_inclusion);
+        println!("=== * fallback={}", fallback);
+        println!("=== get_proof_data_zkvm_input START");
+        let input = get_proof_data_zkvm_input(
+            users,
+            markets,
+            target_chain_ids,
+            chain_id,
+            l1_inclusion,
+            fallback,
+        )
+        .await;
+        println!("=== get_proof_data_zkvm_input END");
+        println!("=== decode_input START");
+        let decoded_input = decode_input(input);
+        println!("=== decode_input END");
+        // validate_decoded_input_linea(decoded_input);
+        let chain_id = decoded_input.1;
+        let account = decoded_input.2;
+        let asset = decoded_input.3;
+        let target_chain_ids = decoded_input.4;
+        let env_input = decoded_input.0;
+        let sequencer_commitment = decoded_input.5;
+        let env_op_input = decoded_input.6;
+        let linking_blocks = decoded_input.7;
+        let mut output: Vec<Bytes> = Vec::new();
+        let env_eth_input = decoded_input.8;
+        let op_evm_input = decoded_input.9;
+        let sequencer_commitment_opstack_2 = decoded_input.10;
+        let env_op_input_2 = decoded_input.11;
+        println!("=== validate_get_proof_data_call START");
+        validate_get_proof_data_call(
+            chain_id,
+            account,
+            asset,
+            target_chain_ids,
+            env_input,
+            sequencer_commitment,
+            env_op_input,
+            &linking_blocks,
+            &mut output,
+            &env_eth_input,
+            op_evm_input,
+            sequencer_commitment_opstack_2,
+            env_op_input_2,
+        );
+        println!("=== validate_get_proof_data_call END");
+
+        println!("=== SUCCESS ===");
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_e2e() {
+        let users = Vec::from([Address::random()]);
+        let markets = Vec::from([MUSDC, MWETH]);
+        let target_chain_ids = Vec::from([LINEA_CHAIN_ID]);
+        let chain_id = ETHEREUM_CHAIN_ID;
+        let l1_inclusion = false;
+        let fallback = false;
+
+        println!("=== ETHEREUM E2E TEST ===");
         println!("=== * users={:?}", users);
         println!("=== * markets={:?}", markets);
         println!("=== * target_chain_ids={:?}", target_chain_ids);
