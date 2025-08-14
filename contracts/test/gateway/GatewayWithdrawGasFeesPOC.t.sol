@@ -9,10 +9,10 @@ interface Gateway {
 }
 
 contract GatewayWithdrawGasFeesFailed is Test {
-    Gateway gateway = Gateway(0xACCFD6C3099Bac60cc8B99cAB6d5f1A107355316);
+    Gateway gateway = Gateway(0xC7Bc6bD45Eb84D594f51cED3c5497E6812C7732f);
 
     function setUp() external {
-        vm.createSelectFork("https://eth.merkle.io", 23137820);
+        vm.createSelectFork("https://eth.merkle.io");
 
         // Top up some ETH
         vm.deal(address(gateway), 10 ether);
