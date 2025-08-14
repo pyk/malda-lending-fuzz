@@ -69,7 +69,7 @@ the full communication flow between the Host (`mErc20Host`) and Extension
 | CC01 | A deposit on an extension chain must be claimable for mTokens on the host chain.                                              | Foundry       | PASSED                |
 | CC02 | A withdrawal from the host chain must be claimable on the extension chain, provided there is sufficient liquidity.            | Foundry       | PASSED                |
 | CC03 | The `sender` field in a ZK proof's journal must be the `msg.sender` of the transaction that initiated the cross-chain action. | Manual Review | PASSED                |
-| CC04 | The target contract must enforce that a ZK proof is bound to its intended destination market or gateway.                      | Manual Review | [02](/findings/02.md) |
+| CC04 | The target contract must enforce that a ZK proof is bound to its intended destination market or gateway.                      | Manual Review | PASSED                |
 | CC05 | There must be a trustless mechanism for users to reclaim funds if the off-chain sequencer fails to generate a proof.          | Manual Review | [03](/findings/03.md) |
 
 ### ZK Coprocessor
