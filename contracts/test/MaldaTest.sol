@@ -19,6 +19,9 @@ import {mErc20Host} from "../src/mToken/host/mErc20Host.sol";
 import {RewardDistributor} from "../src/rewards/RewardDistributor.sol";
 import {ChainlinkFeedMock} from "./mocks/ChainlinkFeedMock.sol";
 import {MixedPriceOracleV4} from "../src/oracles/MixedPriceOracleV4.sol";
+import {Rebalancer} from "../src/rebalancer/Rebalancer.sol";
+import {AccrossBridge} from "../src/rebalancer/bridges/AcrossBridge.sol";
+import {EverclearBridge} from "../src/rebalancer/bridges/EverclearBridge.sol";
 
 // forgefmt: disable-end
 
@@ -474,5 +477,71 @@ contract MaldaTest is Test {
             params.stalenessPeriod
         );
         vm.label(address(newOracle), params.label);
+    }
+
+    /// DEPLOY REBALANCER
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new Rebalancer contract.
+     * @return newRebalancer The newly deployed Rebalancer contract instance.
+     */
+    function deployRebalancer(
+        string memory label,
+        Roles rolesContract,
+        address saveAddress
+    )
+        internal
+        returns (Rebalancer newRebalancer)
+    {
+        newRebalancer = new Rebalancer(
+            address(rolesContract), //
+            saveAddress
+        );
+        vm.label(address(newRebalancer), label);
+    }
+
+    /// DEPLOY ACROSS BRIDGE
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new AccrossBridge contract.
+     * @return newAcrossBridge The newly deployed AccrossBridge instance.
+     */
+    function deployAcrossBridge(
+        string memory label,
+        Roles rolesContract,
+        address spokePoolAddress
+    )
+        internal
+        returns (AccrossBridge newAcrossBridge)
+    {
+        newAcrossBridge = new AccrossBridge(
+            address(rolesContract), //
+            spokePoolAddress
+        );
+        vm.label(address(newAcrossBridge), label);
+    }
+
+    /// DEPLOY EVERCLEAR BRIDGE
+    ////////////////////////////////////////////////////////////////
+
+    /**
+     * @notice Deploys a new EverclearBridge contract.
+     * @return newEverclearBridge The newly deployed EverclearBridge instance.
+     */
+    function deployEverclearBridge(
+        string memory label,
+        Roles rolesContract,
+        address feeAdapterAddress
+    )
+        internal
+        returns (EverclearBridge newEverclearBridge)
+    {
+        newEverclearBridge = new EverclearBridge(
+            address(rolesContract), //
+            feeAdapterAddress
+        );
+        vm.label(address(newEverclearBridge), label);
     }
 }
