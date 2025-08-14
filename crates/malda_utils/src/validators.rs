@@ -95,8 +95,15 @@ pub fn validate_get_proof_data_call(
     sequencer_commitment_opstack_2: Option<SequencerCommitment>,
     env_input_opstack_for_l1_block_call_2: Option<EthEvmInput>,
 ) {
+    println!("=== validate_get_proof_data_call args");
+    println!("=== * chain_id={:?}", chain_id);
+    println!("=== * account={:?}", account);
+    println!("=== * asset={:?}", asset);
+    println!("=== * target_chain_ids={:?}", target_chain_ids);
+    println!("=== * linking_blocks={:?}", linking_blocks);
     // Sort and verify all relevant parameters for the proof data call,
     // including environment and block headers.
+    println!("=== sort_and_verify_relevant_params START");
     let (
         env_for_viewcall,
         block_header_to_validate,
@@ -113,6 +120,7 @@ pub fn validate_get_proof_data_call(
         env_input_eth_for_l1_inclusion,
         env_input_opstack_for_viewcall_with_l1_inclusion,
     );
+    println!("=== sort_and_verify_relevant_params END");
 
     // Validate the block hash for the given chain and environment.
     let validated_block_hash = get_validated_block_hash(
@@ -149,6 +157,8 @@ pub fn validate_get_proof_data_call(
             output,
         )
     } else {
+        println!("=== validate_get_proof_data_call without inclusion");
+        println!("=== batch_call_get_proof_data START");
         batch_call_get_proof_data(
             chain_id,
             account,
@@ -158,6 +168,7 @@ pub fn validate_get_proof_data_call(
             validate_l1_inclusion,
             output,
         );
+        println!("=== batch_call_get_proof_data END");
     }
 }
 
@@ -668,12 +679,19 @@ pub fn batch_call_get_proof_data<H>(
 ) where
     H: Clone + std::fmt::Debug + EvmFactory,
 {
+    println!("=== batch_call_get_proof_data args");
+    println!("=== * chain_id={:?}", chain_id);
+    println!("=== * account={:?}", account);
+    println!("=== * asset={:?}", asset);
+    println!("=== * target_chain_ids={:?}", target_chain_ids);
+    println!("=== * validate_l1_inclusion={:?}", validate_l1_inclusion);
     // Create array of Call3 structs for each proof data check.
     let mut calls = Vec::with_capacity(account.len());
     let batch_params = account
         .iter()
         .zip(asset.iter())
         .zip(target_chain_ids.iter());
+    println!("=== * multicall preparation START");
     for ((user, market), target_chain_id) in batch_params {
         let user_bytes: [u8; 32] = user.into_word().into();
         let chain_id_bytes: [u8; 32] =
@@ -686,12 +704,18 @@ pub fn batch_call_get_proof_data<H>(
         call_data.extend_from_slice(&user_bytes);
         call_data.extend_from_slice(&chain_id_bytes);
 
+        println!("=== * user={:?}", user);
+        println!("=== * market={:?}", market);
+        println!("=== * target_chain_id={:?}", target_chain_id);
+        println!("=== * validate_l1_inclusion={:?}", validate_l1_inclusion);
+
         calls.push(Call3 {
             target: *market,
             allowFailure: false,
             callData: call_data.into(),
         });
     }
+    println!("=== * multicall preparation END");
 
     let multicall_contract = Contract::new(MULTICALL, &env);
 
@@ -707,11 +731,17 @@ pub fn batch_call_get_proof_data<H>(
         .zip(target_chain_ids.iter());
 
     // Zip the batch parameters with returns for parallel iteration.
+    println!("=== * encoding output START");
     batch_params.zip(returns.iter()).for_each(
         |(((user, market), target_chain_id), result)| {
             // Decode the returned data as a tuple of (amountIn, amountOut).
             let amounts = <(U256, U256)>::abi_decode(&result.returnData)
                 .expect("Failed to decode return data");
+            println!("=== * user={:?}", user);
+            println!("=== * market={:?}", market);
+            println!("=== * target_chain_id={:?}", target_chain_id);
+            println!("=== * amounts={:?}", amounts);
+            println!("=== * validate_l1_inclusion={:?}", validate_l1_inclusion);
 
             let input = vec![
                 SolidityDataType::Address(*user),
@@ -1308,4 +1338,35 @@ mod tests {
         let valid_header = get_latest_linea_header().await;
         validate_linea_env(LINEA_CHAIN_ID, &valid_header);
     }
+
+    #[tokio::test]
+    async fn test_validate_get_proof_data_call() {
+        let chain_ids = Vec::from([
+            ETHEREUM_CHAIN_ID,
+            OPTIMISM_CHAIN_ID,
+            BASE_CHAIN_ID,
+            LINEA_CHAIN_ID,
+        ]);
+        let accounts = Vec::from([Address::random()]);
+        let asset = Vec::from([Address::random()]);
+        let target_chain_ids = chain_ids.clone();
+        let evm_inputs = 1;
+    }
+
+    // fn test_batch_params() {
+    //     let account = Vec::from([Address::random()]);
+    //     let asset = Vec::from([Address::random(), Address::random()]);
+    //     let target_chain_ids = Vec::from([ETHEREUM_CHAIN_ID]);
+    //     let batch_params = account
+    //         .iter()
+    //         .zip(asset.iter()) // len 2
+    //         .zip(target_chain_ids.iter()); // len 1
+
+    //     batch_params.zip(returns.iter()).for_each(
+    //         // returns.iter() has len 1
+    //         |(((user, market), target_chain_id), result)| {
+    //             // This closure only runs once!
+    //         },
+    //     );
+    // }
 }
