@@ -1,0 +1,18 @@
+[package]
+name = "poc"
+version.workspace = true
+edition = "2024"
+
+[dependencies]
+alloy-consensus = { workspace = true }
+alloy-primitives = { workspace = true }
+malda_rs = { path = "../malda_rs" }
+malda_utils = { path = "../malda_utils" }
+risc0-op-steel = { workspace = true }
+risc0-steel = { workspace = true }
+risc0-zkvm = { version = "2.3.1", default-features = false, features = [
+  "std",
+  "unstable",
+] }
+tokio = { version = "1.0", features = ["full"] }
+
